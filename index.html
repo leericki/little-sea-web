@@ -22,94 +22,177 @@
             background-size: 40px 40px;
             opacity: 0.1;
         }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+        
+        /* 小海 IP 懸浮動畫 */
+        .avatar-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
+    <!-- 導航列 -->
     <nav class="bg-white/90 backdrop-blur-md fixed w-full z-50 border-b border-slate-200">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="bg-blue-600 text-white p-1.5 rounded-lg">
-                    <i data-lucide="waves"></i>
-                </div>
-                <span class="font-bold text-xl tracking-tight text-slate-900">LITTLE SEA <span class="text-blue-600">TRADING</span></span>
-            </div>
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-2">
             
-            <div class="flex gap-4 items-center">
-                <a href="#resources" class="hidden md:block text-sm font-medium text-slate-600 hover:text-blue-600">免費教學</a>
-                <a href="premium.html" class="text-sm font-bold text-yellow-600 hover:text-yellow-700 flex items-center gap-1">
-                    <i data-lucide="lock" class="w-3 h-3"></i> VIP登入
+            <!-- Logo 區 -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <div class="bg-blue-600 text-white p-1.5 rounded-lg">
+                    <i data-lucide="waves" class="w-5 h-5"></i>
+                </div>
+                <div class="flex flex-col leading-none">
+                    <span class="font-black text-sm md:text-lg tracking-tight text-slate-900">LITTLE SEA</span>
+                    <span class="font-bold text-[10px] md:text-xs text-blue-600 tracking-widest">TRADING</span>
+                </div>
+            </div>
+
+            <!-- 電腦版選單 -->
+            <div class="hidden md:flex gap-6 text-sm font-medium text-slate-600 items-center">
+                <a href="daily.html" class="hover:text-blue-600 transition flex items-center gap-1">
+                    <i data-lucide="newspaper" class="w-4 h-4"></i> 小海觀察室
                 </a>
-                <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-red-700 transition shadow-lg shadow-red-500/30 flex items-center gap-2">
-                    訂閱專欄 <i data-lucide="external-link" class="w-4 h-4"></i>
+                <a href="mindset.html" class="hover:text-purple-600 transition flex items-center gap-1">
+                    <i data-lucide="brain-circuit" class="w-4 h-4"></i> 心態分享
+                </a>
+            </div>
+
+            <!-- 右側按鈕區 -->
+            <div class="flex items-center gap-2 md:gap-4">
+                <!-- 特訓室入口 -->
+                <a href="premium.html" class="text-slate-600 hover:text-yellow-600 p-2 flex items-center gap-1 font-bold transition">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-yellow-500"></i>
+                    <span class="hidden md:inline text-sm">小海特訓室</span>
+                </a>
+
+                <!-- PPA 訂閱按鈕 -->
+                <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-3 py-2 md:px-5 md:py-2.5 rounded-full font-bold text-xs md:text-sm transition flex items-center gap-1 shadow-md shadow-red-600/20 whitespace-nowrap">
+                    <i data-lucide="star" class="w-3 h-3 md:w-4 md:h-4 fill-current"></i> 
+                    <span class="hidden md:inline">訂閱小海專案</span>
+                    <span class="md:hidden">訂閱專欄</span>
                 </a>
             </div>
         </div>
     </nav>
 
-    <header class="hero-bg text-white pt-32 pb-20 px-4 relative">
+    <!-- Hero Section (首頁主視覺) -->
+    <header class="hero-bg text-white pt-24 pb-16 md:pt-32 md:pb-24 px-4 relative">
         <div class="hero-pattern"></div>
-        <div class="max-w-4xl mx-auto text-center relative z-10">
-            <span class="inline-block py-1 px-3 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold mb-6 border border-blue-500/30">
-                小海策略分析框架 3.0
-            </span>
-            <h1 class="text-4xl md:text-6xl font-black mb-6 leading-tight">
-                從做夢到實踐<br>
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">交易的一千零一夜</span>
-            </h1>
-            <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto font-light">
-                不只教你 5T 量能與五檔防守，更帶你每日實戰覆盤。<br>
-                加入 PPA 訂閱，與小海同步掌握市場脈動。
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 shadow-lg shadow-red-900/50">
-                    <i data-lucide="newspaper"></i> 訂閱盤前觀察室
-                </a>
-                <a href="tutorial.html" class="bg-slate-700/50 hover:bg-slate-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition backdrop-blur-sm flex items-center justify-center gap-2">
-                    <i data-lucide="play-circle"></i> 體驗五檔模擬
-                </a>
+        
+        <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+            
+            <!-- 左側：文字區 (手機版在下，電腦版在左) -->
+            <div class="text-center md:text-left flex-1 order-2 md:order-1">
+                <span class="inline-block py-1 px-3 rounded-full bg-blue-500/20 text-blue-300 text-xs md:text-sm font-bold mb-4 border border-blue-500/30">
+                    小海策略分析框架 3.0
+                </span>
+                <h1 class="text-4xl md:text-6xl font-black mb-6 leading-tight tracking-tight">
+                    從做夢到實踐<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">交易的一千零一夜</span>
+                </h1>
+                <p class="text-base md:text-xl text-slate-400 mb-8 max-w-lg mx-auto md:mx-0 font-light leading-relaxed">
+                    不只教你 5T 量能與五檔防守，更帶你每日實戰覆盤。<br class="hidden md:block">
+                    加入 PPA 訂閱，與小海同步掌握市場脈動。
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                    <a href="daily.html" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3.5 rounded-xl font-bold text-base transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 w-full sm:w-auto">
+                        <i data-lucide="newspaper" class="w-5 h-5"></i> 小海觀察室
+                    </a>
+                    <a href="premium.html" class="bg-yellow-500 hover:bg-yellow-400 text-slate-900 px-6 py-3.5 rounded-xl font-bold text-base transition backdrop-blur-sm flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 w-full sm:w-auto">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i> 進入特訓室
+                    </a>
+                </div>
             </div>
+
+            <!-- 右側：IP 圖片區 (修正版) -->
+            <div class="relative w-48 h-48 md:w-96 md:h-96 flex-shrink-0 order-1 md:order-2 avatar-float flex items-center justify-center">
+                <!-- 藍色光暈背景 -->
+                <div class="absolute inset-0 bg-blue-500/20 blur-[50px] rounded-full"></div>
+                
+                <!-- 1. 您的圖片 (如果存在則顯示) -->
+                <!-- 如果讀取失敗 (onerror)，這張圖會隱藏，並顯示下面的備用圖 -->
+                <img src="avatar.png" 
+                     alt="小海 Little Sea" 
+                     class="w-full h-full object-contain relative z-10 drop-shadow-2xl"
+                     onerror="this.style.display='none'; document.getElementById('fallback-avatar').style.display='block';">
+                
+                <!-- 2. 備用圖片 (預設隱藏，若讀取不到 avatar.png 才會出現) -->
+                <!-- 使用公開的 DiceBear API 產生一個類似的冒險家頭像 -->
+                <img id="fallback-avatar"
+                     src="https://api.dicebear.com/9.x/adventurer/svg?seed=LittleSea&backgroundColor=b6e3f4" 
+                     alt="小海備用頭像" 
+                     class="w-full h-full object-contain relative z-10 drop-shadow-2xl hidden">
+            </div>
+
         </div>
     </header>
 
-    <section id="resources" class="py-20 bg-slate-100 px-4">
-        <div class="max-w-6xl mx-auto">
-            <h2 class="text-3xl font-bold text-slate-900 mb-12 text-center">教學與訂閱資源</h2>
+    <!-- 精選教學資源區 -->
+    <section id="resources" class="py-16 bg-slate-100 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center md:text-left mb-10">
+                <span class="text-blue-600 font-bold tracking-wider text-sm">LEARNING HUB</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-2">教學與訂閱資源</h2>
+            </div>
 
-            <div class="grid md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 
-                <a href="tutorial.html" class="group bg-white rounded-2xl overflow-hidden shadow-sm card-hover transition duration-300 block border border-slate-200">
-                    <div class="h-48 bg-slate-800 flex items-center justify-center group-hover:bg-slate-700 transition">
-                        <i data-lucide="bar-chart-2" class="w-12 h-12 text-blue-400"></i>
+                <!-- 卡片 1：PPA 專案 -->
+                <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="group bg-white rounded-2xl overflow-hidden shadow-sm card-hover transition duration-300 block relative border-2 border-red-100 h-full">
+                    <div class="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">HOT</div>
+                    <div class="h-32 bg-slate-800 flex items-center justify-center group-hover:bg-slate-700 transition">
+                         <i data-lucide="crown" class="w-10 h-10 text-yellow-400"></i>
                     </div>
-                    <div class="p-6">
-                        <span class="text-blue-600 text-xs font-bold mb-2 block">FREE TOOL</span>
-                        <h3 class="text-xl font-bold text-slate-900 mb-2">五檔實戰模擬器</h3>
-                        <p class="text-slate-600 text-sm">互動式教學，帶你看懂主力的防守單與假壓單。</p>
-                    </div>
-                </a>
-
-                <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="group bg-white rounded-2xl overflow-hidden shadow-sm card-hover transition duration-300 block border border-slate-200 relative">
-                    <div class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">HOT</div>
-                    <div class="h-48 bg-red-50 flex items-center justify-center group-hover:bg-red-100 transition">
-                        <i data-lucide="file-text" class="w-12 h-12 text-red-500"></i>
-                    </div>
-                    <div class="p-6">
-                        <span class="text-red-600 text-xs font-bold mb-2 block">SUBSCRIPTION</span>
-                        <h3 class="text-xl font-bold text-slate-900 mb-2">小海盤前/週末觀察室</h3>
-                        <p class="text-slate-600 text-sm">每週更新產業分析與盤勢規劃，建立交易劇本。</p>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">PressPlay 訂閱</h3>
+                        <p class="text-slate-600 text-xs mb-3">最完整的操盤心法與實戰覆盤。</p>
+                        <span class="text-red-500 font-bold text-xs flex items-center">加入 <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i></span>
                     </div>
                 </a>
 
-                <a href="premium.html" class="group bg-white rounded-2xl overflow-hidden shadow-sm card-hover transition duration-300 block border border-slate-200">
-                    <div class="h-48 bg-slate-900 flex items-center justify-center group-hover:bg-slate-800 transition">
-                        <i data-lucide="lock" class="w-12 h-12 text-yellow-500"></i>
+                <!-- 卡片 2：小海觀察室 -->
+                <a href="daily.html" class="group bg-white rounded-2xl overflow-hidden shadow-sm card-hover transition duration-300 block relative border border-slate-200 h-full">
+                    <div class="absolute top-4 right-4 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded">NEW</div>
+                    <div class="h-32 bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+                        <i data-lucide="newspaper" class="w-10 h-10 text-white"></i>
                     </div>
-                    <div class="p-6">
-                        <span class="text-yellow-600 text-xs font-bold mb-2 block">PREMIUM ONLY</span>
-                        <h3 class="text-xl font-bold text-slate-900 mb-2">VIP 影音特訓班</h3>
-                        <p class="text-slate-600 text-sm">私密高階影音教學，需輸入學員信箱驗證觀看。</p>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">小海觀察室</h3>
+                        <p id="latest-article-title" class="text-slate-600 text-xs mb-3 line-clamp-2 min-h-[2.5em]">
+                            載入最新文章中...
+                        </p>
+                        <span class="text-blue-600 font-bold text-xs flex items-center">閱讀全文 <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i></span>
+                    </div>
+                </a>
+
+                <!-- 卡片 3：心態分享 -->
+                <a href="mindset.html" class="group bg-white rounded-2xl overflow-hidden shadow-sm card-hover transition duration-300 block relative border border-slate-200 h-full">
+                    <div class="h-32 bg-slate-900 flex items-center justify-center group-hover:bg-purple-900 transition">
+                        <i data-lucide="brain-circuit" class="w-10 h-10 text-purple-400"></i>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">小海心態分享</h3>
+                        <p class="text-slate-600 text-xs mb-3">交易是一場與自己的對話。分享我的紀律與心路歷程。</p>
+                        <span class="text-purple-600 font-bold text-xs flex items-center">閱讀分享 <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i></span>
+                    </div>
+                </a>
+
+                <!-- 卡片 4：小海特訓室 -->
+                <a href="premium.html" class="group bg-white rounded-2xl overflow-hidden shadow-sm card-hover transition duration-300 block relative border-2 border-yellow-200 h-full">
+                    <div class="absolute top-4 right-4 bg-yellow-500 text-slate-900 text-xs font-bold px-2 py-1 rounded">VIP</div>
+                    <div class="h-32 bg-slate-900 flex items-center justify-center group-hover:bg-black transition">
+                        <i data-lucide="shield-check" class="w-10 h-10 text-yellow-500"></i>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">小海特訓室</h3>
+                        <p class="text-slate-600 text-xs mb-3">內含 <strong class="text-yellow-600">五檔透視模擬</strong> 與操盤三部曲。</p>
+                        <span class="text-slate-500 font-bold text-xs flex items-center">申請進入 <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i></span>
                     </div>
                 </a>
 
@@ -117,12 +200,66 @@
         </div>
     </section>
 
-    <footer class="bg-slate-900 text-slate-400 py-10 text-center text-sm mt-auto">
-        &copy; 2024 小海操盤術. All rights reserved.
+    <footer class="bg-slate-900 text-white py-12 mt-auto">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h2 class="text-2xl font-bold mb-4">加入小海的做夢故事</h2>
+            <div class="flex justify-center gap-4">
+                <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-full font-bold transition flex items-center gap-2 shadow-lg shadow-red-900/50">
+                    前往 PressPlay 訂閱
+                </a>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-600">
+                &copy; 2025 小海操盤術. All rights reserved.
+            </div>
+        </div>
     </footer>
 
     <script>
         lucide.createIcons();
+    </script>
+
+    <!-- Firebase 連線 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ==================================================
+        // 【請在此貼上您的 Firebase Config】
+        // ==================================================
+        const firebaseConfig = {
+            apiKey: "您的_API_KEY",
+            authDomain: "您的_PROJECT.firebaseapp.com",
+            projectId: "您的_PROJECT_ID",
+            storageBucket: "您的_BUCKET",
+            messagingSenderId: "您的_ID",
+            appId: "您的_APP_ID"
+        };
+        // ==================================================
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadLatestTitle() {
+            const titleEl = document.getElementById('latest-article-title');
+            const q = query(collection(db, "articles"), orderBy("timestamp", "desc"), limit(1));
+            
+            try {
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const data = querySnapshot.docs[0].data();
+                    titleEl.innerText = data.title;
+                    titleEl.classList.add("font-bold", "text-slate-800");
+                } else {
+                    titleEl.innerText = "目前尚無文章";
+                }
+            } catch (e) {
+                console.error(e);
+                titleEl.innerText = "點擊查看每日更新";
+            }
+        }
+
+        loadLatestTitle();
     </script>
 </body>
 </html>
