@@ -49,9 +49,9 @@
 
     <!-- Firebase Script -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
@@ -69,7 +69,7 @@
 
         const container = document.getElementById('mindsetContainer');
 
-        signInAnonymously(auth).then(() => {
+        function startListening() {
             // 讀取 "posts"
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             
@@ -117,10 +117,27 @@
                     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
                         <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
                         <p class="font-bold">讀取資料失敗</p>
-                        <p class="text-sm mt-1">無法連線到資料庫 (Collection: posts)</p>
+                        <p class="text-xs mt-2 bg-white/50 p-2 rounded text-left font-mono">${error.message}</p>
                     </div>`;
                 lucide.createIcons();
             });
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                startListening();
+            } else {
+                signInAnonymously(auth).then(() => {}).catch((error) => {
+                    console.error("Auth Error:", error);
+                    container.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
+                        <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2"></i>
+                        <p class="font-bold">登入驗證失敗</p>
+                        <p class="text-xs mt-2 bg-white/50 p-2 rounded text-left font-mono">${error.message}</p>
+                    </div>`;
+                    lucide.createIcons();
+                });
+            }
         });
     </script>
 </body>

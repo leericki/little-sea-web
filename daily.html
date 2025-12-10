@@ -51,7 +51,6 @@
 
     <!-- Firebase Script -->
     <script type="module">
-        // 注意：這裡全部統一改為 10.8.0 版本
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -78,12 +77,12 @@
 
         const container = document.getElementById('postsContainer');
 
-        // 啟動監聽的主函式
         function startListening() {
+            // 讀取 "posts"
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             
             onSnapshot(q, (snapshot) => {
-                container.innerHTML = ''; // 清空載入中
+                container.innerHTML = '';
                 let hasContent = false;
 
                 snapshot.forEach((doc) => {
@@ -124,7 +123,6 @@
                     lucide.createIcons();
                 }
             }, (error) => {
-                // 顯示詳細錯誤訊息
                 console.error("Firestore Error:", error);
                 container.innerHTML = `
                     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
@@ -136,16 +134,11 @@
             });
         }
 
-        // 登入邏輯：先檢查是否已登入，若無則匿名登入
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // 已登入，直接開始監聽
                 startListening();
             } else {
-                // 未登入，嘗試匿名登入
-                signInAnonymously(auth).then(() => {
-                    // 登入成功會觸發上面的 if(user)
-                }).catch((error) => {
+                signInAnonymously(auth).then(() => {}).catch((error) => {
                     console.error("Auth Error:", error);
                     container.innerHTML = `
                     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
