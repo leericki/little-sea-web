@@ -38,7 +38,7 @@
             <div class="text-center py-20 text-slate-400">
                 <i data-lucide="loader-2" class="w-10 h-10 animate-spin mx-auto mb-3 text-blue-500"></i>
                 <p>正在同步最新的分析...</p>
-                <p class="text-xs mt-2 text-slate-300">若長時間未回應，請檢查網路</p>
+                <p class="text-xs mt-2 text-slate-300">連線中...</p>
             </div>
         </div>
     </main>
@@ -51,9 +51,10 @@
 
     <!-- Firebase Script -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // 注意：這裡全部統一改為 10.8.0 版本
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
@@ -77,12 +78,12 @@
 
         const container = document.getElementById('postsContainer');
 
-        signInAnonymously(auth).then(() => {
-            // 讀取 "posts"
+        // 啟動監聽的主函式
+        function startListening() {
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             
             onSnapshot(q, (snapshot) => {
-                container.innerHTML = ''; // 清空載入中動畫
+                container.innerHTML = ''; // 清空載入中
                 let hasContent = false;
 
                 snapshot.forEach((doc) => {
@@ -123,19 +124,40 @@
                     lucide.createIcons();
                 }
             }, (error) => {
+                // 顯示詳細錯誤訊息
                 console.error("Firestore Error:", error);
                 container.innerHTML = `
                     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
                         <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
                         <p class="font-bold">讀取資料失敗</p>
-                        <p class="text-sm mt-1">無法連線到資料庫 (Collection: posts)</p>
+                        <p class="text-xs mt-2 bg-white/50 p-2 rounded text-left font-mono">${error.message}</p>
                     </div>`;
                 lucide.createIcons();
             });
-        }).catch((err) => {
-             console.error("Auth Error:", err);
-             container.innerHTML = `<div class="text-center py-10 text-red-400">登入驗證失敗</div>`;
+        }
+
+        // 登入邏輯：先檢查是否已登入，若無則匿名登入
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // 已登入，直接開始監聽
+                startListening();
+            } else {
+                // 未登入，嘗試匿名登入
+                signInAnonymously(auth).then(() => {
+                    // 登入成功會觸發上面的 if(user)
+                }).catch((error) => {
+                    console.error("Auth Error:", error);
+                    container.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
+                        <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2"></i>
+                        <p class="font-bold">登入驗證失敗</p>
+                        <p class="text-xs mt-2 bg-white/50 p-2 rounded text-left font-mono">${error.message}</p>
+                    </div>`;
+                    lucide.createIcons();
+                });
+            }
         });
+
     </script>
 </body>
 </html>
