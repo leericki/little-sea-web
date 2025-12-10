@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小海 | 心態分享</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #fffbeb; } /* 暖色調背景 */
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-amber-100">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-lightbulb text-amber-500 text-xl"></i>
+                <h1 class="text-xl font-bold text-gray-800">心態分享區</h1>
+            </div>
+            <a href="daily.html" class="text-sm text-gray-500 hover:text-amber-600 transition">
+                <i class="fas fa-arrow-left mr-1"></i> 返回觀察室
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <div class="bg-amber-50 rounded-xl p-4 mb-8 text-amber-800 text-sm border border-amber-200">
+            <i class="fas fa-quote-left mr-2"></i>
+            交易不僅是技術的比拼，更是心性的修煉。這裡是小海記錄心路歷程的地方。
+        </div>
+
+        <div id="mindsetContainer" class="space-y-8">
+            <!-- Loading State -->
+            <div class="text-center py-10 text-gray-500">
+                <i class="fas fa-coffee text-2xl mb-2 text-amber-300"></i>
+                <p>正在沖泡心靈雞湯...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
+            authDomain: "littlesea-web.firebaseapp.com",
+            projectId: "littlesea-web",
+            storageBucket: "littlesea-web.firebasestorage.app",
+            messagingSenderId: "796678723012",
+            appId: "1:796678723012:web:6c501411714c2f49960091",
+            measurementId: "G-W8GSXYYY9L"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        signInAnonymously(auth).then(() => {
+            const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+            
+            onSnapshot(q, (snapshot) => {
+                const container = document.getElementById('mindsetContainer');
+                container.innerHTML = ''; 
+
+                let hasContent = false;
+
+                snapshot.forEach((doc) => {
+                    const post = doc.data();
+                    
+                    // 關鍵過濾邏輯：只顯示 "心態分享"
+                    if (post.category === '心態分享') {
+                        hasContent = true;
+                        const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('zh-TW', { year:'numeric', month: '2-digit', day: '2-digit' }) : '剛剛';
+
+                        const html = `
+                            <article class="bg-white rounded-xl shadow-sm border-l-4 border-amber-400 p-6 md:p-8 hover:shadow-md transition duration-300">
+                                <div class="flex items-center gap-2 mb-4 text-amber-600 text-sm font-medium">
+                                    <i class="far fa-calendar-alt"></i>
+                                    <span>${date}</span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-4">${post.title}</h2>
+                                <div class="text-gray-700 leading-loose whitespace-pre-wrap font-serif text-lg">${post.content}</div>
+                                <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+                                    <span class="text-amber-400 text-2xl"><i class="fas fa-feather-alt"></i></span>
+                                </div>
+                            </article>
+                        `;
+                        container.insertAdjacentHTML('beforeend', html);
+                    }
+                });
+
+                if (!hasContent) {
+                    container.innerHTML = '<div class="text-center py-10 text-gray-400">目前沒有心態分享文章。</div>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
