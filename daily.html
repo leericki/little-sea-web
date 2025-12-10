@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小海觀察室 | 盤勢分析</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
         .line-clamp-3 {
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -16,36 +17,43 @@
         }
     </style>
 </head>
-<body>
+<body class="flex flex-col min-h-screen">
     <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-50">
+    <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-200">
         <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <i class="fas fa-chart-line text-blue-600 text-xl"></i>
-                <h1 class="text-xl font-bold text-gray-800">小海觀察室</h1>
+                <i data-lucide="newspaper" class="text-blue-600 w-6 h-6"></i>
+                <h1 class="text-xl font-bold text-slate-800">小海觀察室</h1>
             </div>
-            <a href="mindset.html" class="text-sm text-gray-500 hover:text-blue-600 transition">
-                前往心態分享 <i class="fas fa-arrow-right ml-1"></i>
+            <a href="index.html" class="text-sm text-slate-500 hover:text-blue-600 transition flex items-center gap-1">
+                <i data-lucide="home" class="w-4 h-4"></i> 回首頁
             </a>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-4xl mx-auto px-4 py-8">
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
         <div id="postsContainer" class="space-y-6">
             <!-- Loading State -->
-            <div class="text-center py-10 text-gray-500">
-                <i class="fas fa-circle-notch fa-spin text-2xl mb-2"></i>
-                <p>正在載入最新的分析...</p>
+            <div class="text-center py-20 text-slate-400">
+                <i data-lucide="loader-2" class="w-10 h-10 animate-spin mx-auto mb-3 text-blue-500"></i>
+                <p>正在同步最新的分析...</p>
+                <p class="text-xs mt-2 text-slate-300">若長時間未回應，請檢查網路</p>
             </div>
         </div>
     </main>
 
+    <footer class="bg-white py-8 border-t border-slate-200 text-center text-slate-400 text-sm mt-auto">
+        &copy; 2025 小海的做夢故事. All rights reserved.
+    </footer>
+
+    <script>lucide.createIcons();</script>
+
     <!-- Firebase Script -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
@@ -61,53 +69,72 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 類別標籤顏色對應
         const categoryColors = {
-            '盤前分析': 'bg-blue-100 text-blue-700',
-            '盤後分析': 'bg-indigo-100 text-indigo-700',
-            '周末分析': 'bg-purple-100 text-purple-700'
+            '盤前分析': 'bg-blue-100 text-blue-700 border-blue-200',
+            '盤後分析': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+            '周末分析': 'bg-purple-100 text-purple-700 border-purple-200'
         };
 
+        const container = document.getElementById('postsContainer');
+
         signInAnonymously(auth).then(() => {
+            // 讀取 "posts"
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             
             onSnapshot(q, (snapshot) => {
-                const container = document.getElementById('postsContainer');
                 container.innerHTML = ''; // 清空載入中動畫
-
                 let hasContent = false;
 
                 snapshot.forEach((doc) => {
                     const post = doc.data();
                     
-                    // 關鍵過濾邏輯：只顯示不是 "心態分享" 的文章
                     if (post.category !== '心態分享') {
                         hasContent = true;
                         const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit' }) : '剛剛';
-                        const badgeColor = categoryColors[post.category] || 'bg-gray-100 text-gray-700';
+                        const badgeClass = categoryColors[post.category] || 'bg-gray-100 text-gray-700';
 
                         const html = `
-                            <article class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-300">
+                            <article class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition duration-300">
                                 <div class="p-6">
                                     <div class="flex items-center justify-between mb-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeColor}">
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold border ${badgeClass}">
                                             ${post.category}
                                         </span>
-                                        <span class="text-sm text-gray-400 font-mono">${date}</span>
+                                        <span class="text-sm text-slate-400 font-mono flex items-center gap-1">
+                                            <i data-lucide="clock" class="w-3 h-3"></i> ${date}
+                                        </span>
                                     </div>
-                                    <h2 class="text-xl font-bold text-gray-800 mb-3">${post.title}</h2>
-                                    <div class="text-gray-600 leading-relaxed whitespace-pre-wrap">${post.content}</div>
+                                    <h2 class="text-xl font-bold text-slate-800 mb-3">${post.title}</h2>
+                                    <div class="text-slate-600 leading-relaxed whitespace-pre-wrap">${post.content}</div>
                                 </div>
                             </article>
                         `;
                         container.insertAdjacentHTML('beforeend', html);
                     }
                 });
+                lucide.createIcons();
 
                 if (!hasContent) {
-                    container.innerHTML = '<div class="text-center py-10 text-gray-400">目前沒有盤勢分析文章。</div>';
+                    container.innerHTML = `
+                        <div class="text-center py-20 text-slate-400">
+                            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                            <p>目前沒有盤勢分析文章。</p>
+                        </div>`;
+                    lucide.createIcons();
                 }
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                container.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
+                        <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
+                        <p class="font-bold">讀取資料失敗</p>
+                        <p class="text-sm mt-1">無法連線到資料庫 (Collection: posts)</p>
+                    </div>`;
+                lucide.createIcons();
             });
+        }).catch((err) => {
+             console.error("Auth Error:", err);
+             container.innerHTML = `<div class="text-center py-10 text-red-400">登入驗證失敗</div>`;
         });
     </script>
 </body>

@@ -5,46 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小海 | 心態分享</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #fffbeb; } /* 暖色調背景 */
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #fffbeb; }
     </style>
 </head>
-<body>
+<body class="flex flex-col min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-amber-100">
         <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <i class="fas fa-lightbulb text-amber-500 text-xl"></i>
-                <h1 class="text-xl font-bold text-gray-800">心態分享區</h1>
+                <i data-lucide="brain-circuit" class="text-amber-500 w-6 h-6"></i>
+                <h1 class="text-xl font-bold text-slate-800">心態分享區</h1>
             </div>
-            <a href="daily.html" class="text-sm text-gray-500 hover:text-amber-600 transition">
-                <i class="fas fa-arrow-left mr-1"></i> 返回觀察室
+            <a href="index.html" class="text-sm text-slate-500 hover:text-amber-600 transition flex items-center gap-1">
+                <i data-lucide="home" class="w-4 h-4"></i> 回首頁
             </a>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-4xl mx-auto px-4 py-8">
-        <div class="bg-amber-50 rounded-xl p-4 mb-8 text-amber-800 text-sm border border-amber-200">
-            <i class="fas fa-quote-left mr-2"></i>
-            交易不僅是技術的比拼，更是心性的修煉。這裡是小海記錄心路歷程的地方。
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
+        <div class="bg-amber-50 rounded-xl p-4 mb-8 text-amber-800 text-sm border border-amber-200 flex items-start gap-3">
+            <i data-lucide="quote" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+            <p>交易不僅是技術的比拼，更是心性的修煉。這裡是小海記錄心路歷程的地方。</p>
         </div>
 
         <div id="mindsetContainer" class="space-y-8">
             <!-- Loading State -->
-            <div class="text-center py-10 text-gray-500">
-                <i class="fas fa-coffee text-2xl mb-2 text-amber-300"></i>
-                <p>正在沖泡心靈雞湯...</p>
+            <div class="text-center py-20 text-amber-400/50">
+                <i data-lucide="coffee" class="w-10 h-10 animate-bounce mx-auto mb-3"></i>
+                <p class="text-slate-500">正在沖泡心靈雞湯...</p>
             </div>
         </div>
     </main>
 
+    <footer class="bg-white py-8 border-t border-amber-100 text-center text-slate-400 text-sm mt-auto">
+        &copy; 2025 小海的做夢故事. All rights reserved.
+    </footer>
+
+    <script>lucide.createIcons();</script>
+
     <!-- Firebase Script -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
@@ -60,11 +67,13 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        const container = document.getElementById('mindsetContainer');
+
         signInAnonymously(auth).then(() => {
+            // 讀取 "posts"
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             
             onSnapshot(q, (snapshot) => {
-                const container = document.getElementById('mindsetContainer');
                 container.innerHTML = ''; 
 
                 let hasContent = false;
@@ -72,7 +81,6 @@
                 snapshot.forEach((doc) => {
                     const post = doc.data();
                     
-                    // 關鍵過濾邏輯：只顯示 "心態分享"
                     if (post.category === '心態分享') {
                         hasContent = true;
                         const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('zh-TW', { year:'numeric', month: '2-digit', day: '2-digit' }) : '剛剛';
@@ -80,23 +88,38 @@
                         const html = `
                             <article class="bg-white rounded-xl shadow-sm border-l-4 border-amber-400 p-6 md:p-8 hover:shadow-md transition duration-300">
                                 <div class="flex items-center gap-2 mb-4 text-amber-600 text-sm font-medium">
-                                    <i class="far fa-calendar-alt"></i>
+                                    <i data-lucide="calendar" class="w-4 h-4"></i>
                                     <span>${date}</span>
                                 </div>
-                                <h2 class="text-2xl font-bold text-gray-800 mb-4">${post.title}</h2>
-                                <div class="text-gray-700 leading-loose whitespace-pre-wrap font-serif text-lg">${post.content}</div>
-                                <div class="mt-6 pt-4 border-t border-gray-100 flex justify-end">
-                                    <span class="text-amber-400 text-2xl"><i class="fas fa-feather-alt"></i></span>
+                                <h2 class="text-2xl font-bold text-slate-800 mb-4">${post.title}</h2>
+                                <div class="text-slate-700 leading-loose whitespace-pre-wrap font-sans text-lg">${post.content}</div>
+                                <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                                    <span class="text-amber-400"><i data-lucide="feather" class="w-6 h-6"></i></span>
                                 </div>
                             </article>
                         `;
                         container.insertAdjacentHTML('beforeend', html);
                     }
                 });
+                lucide.createIcons();
 
                 if (!hasContent) {
-                    container.innerHTML = '<div class="text-center py-10 text-gray-400">目前沒有心態分享文章。</div>';
+                    container.innerHTML = `
+                        <div class="text-center py-20 text-slate-400">
+                            <i data-lucide="book-open" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+                            <p>目前沒有心態分享文章。</p>
+                        </div>`;
+                    lucide.createIcons();
                 }
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                 container.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
+                        <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
+                        <p class="font-bold">讀取資料失敗</p>
+                        <p class="text-sm mt-1">無法連線到資料庫 (Collection: posts)</p>
+                    </div>`;
+                lucide.createIcons();
             });
         });
     </script>

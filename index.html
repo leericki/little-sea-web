@@ -23,9 +23,7 @@
             opacity: 0.1;
         }
         .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
-        .avatar-float {
-            animation: float 6s ease-in-out infinite;
-        }
+        .avatar-float { animation: float 6s ease-in-out infinite; }
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-20px); }
@@ -38,8 +36,6 @@
     <!-- 導航列 -->
     <nav class="bg-white/90 backdrop-blur-md fixed w-full z-50 border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center gap-2">
-            
-            <!-- Logo -->
             <div class="flex items-center gap-2 flex-shrink-0">
                 <div class="bg-blue-600 text-white p-1.5 rounded-lg">
                     <i data-lucide="waves" class="w-5 h-5"></i>
@@ -50,7 +46,6 @@
                 </div>
             </div>
 
-            <!-- 電腦版選單 -->
             <div class="hidden md:flex gap-6 text-sm font-medium text-slate-600 items-center">
                 <a href="daily.html" class="hover:text-blue-600 transition flex items-center gap-1">
                     <i data-lucide="newspaper" class="w-4 h-4"></i> 小海觀察室
@@ -60,7 +55,6 @@
                 </a>
             </div>
 
-            <!-- 右側按鈕 (已移除登入按鈕) -->
             <div class="flex items-center gap-2 md:gap-4">
                 <a href="premium.html" class="text-slate-600 hover:text-yellow-600 p-2 flex items-center gap-1 font-bold transition">
                     <i data-lucide="shield-check" class="w-5 h-5 text-yellow-500"></i>
@@ -156,20 +150,16 @@
                 <a href="https://line.me/ti/g2/e1gCbXLo3FTCJHc10JElDmUSdo_o9zc7VnqylA?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" target="_blank" class="bg-green-500 hover:bg-green-400 text-white px-6 py-3 rounded-full font-bold transition flex items-center gap-2 shadow-lg">
                     <i data-lucide="message-circle" class="w-5 h-5"></i> 加入 Line 社群
                 </a>
-                
                 <a href="https://www.instagram.com/sea895380/" target="_blank" class="bg-pink-600 hover:bg-pink-500 text-white px-6 py-3 rounded-full font-bold transition flex items-center gap-2 shadow-lg">
                     <i data-lucide="instagram" class="w-5 h-5"></i> 追蹤 Instagram
                 </a>
-                
                 <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-full font-bold transition flex items-center gap-2 shadow-lg">
                     <i data-lucide="star" class="w-5 h-5"></i> PressPlay 訂閱
                 </a>
             </div>
 
-            <!-- 版權區塊：已加入隱藏後台入口 -->
             <div class="mt-12 pt-8 border-t border-slate-800 text-sm text-slate-500 flex justify-between items-center">
                 <span>&copy; 2025 小海的做夢故事. All rights reserved.</span>
-                
                 <!-- 秘密通道：只有一個半透明的鎖頭 -->
                 <a href="dashboard.html" class="opacity-10 hover:opacity-100 transition-opacity duration-300 p-2" title="Admin">
                     <i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>
@@ -185,9 +175,6 @@
         import { getFirestore, collection, getDocs, query, orderBy, limit } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // ==================================================
-        //  Firebase Config
-        // ==================================================
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
             authDomain: "littlesea-web.firebaseapp.com",
@@ -197,14 +184,13 @@
             appId: "1:796678723012:web:6c501411714c2f49960091",
             measurementId: "G-W8GSXYYY9L"
         };
-        // ==================================================
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 抓取最新一篇文章標題顯示在卡片上
         async function loadLatestTitle() {
             const titleEl = document.getElementById('latest-article-title');
+            // 讀取 "posts"
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"), limit(1));
             try {
                 const querySnapshot = await getDocs(q);
