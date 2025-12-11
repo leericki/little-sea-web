@@ -6,7 +6,7 @@
     <title>小海控制台 | 發文系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- 使用穩定版 SDK -->
+    <!-- 🟢 關鍵修正：使用最新版 SDK 以支援 1.5 Flash 模型 -->
     <script type="importmap">
       {
         "imports": {
@@ -52,14 +52,9 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v5.1 診斷版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v6.0 核心升級版</span></h1>
             </div>
             <div class="flex items-center gap-4">
-                <!-- 狀態顯示 -->
-                <button onclick="testConnection()" class="text-xs font-mono px-3 py-1.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 transition flex items-center gap-1">
-                    <i class="fas fa-stethoscope"></i> 診斷連線
-                </button>
-                
                 <button onclick="toggleApiKeyInput()" class="text-gray-500 hover:text-purple-600 text-sm font-medium transition" title="設定 AI Key">
                     <i class="fas fa-robot mr-1"></i> AI 設定
                 </button>
@@ -74,7 +69,7 @@
                 <div class="flex gap-2 items-center">
                     <i class="fas fa-key text-purple-500"></i>
                     <input type="password" id="geminiApiKey" placeholder="請貼上 ...Z10c 結尾的 Key" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
-                    <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700">儲存並測試</button>
+                    <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700">儲存新 Key</button>
                 </div>
                 <div class="flex justify-between items-center text-xs text-purple-600 ml-6">
                     <span id="currentKeyInfo">目前 Key: 未設定</span>
@@ -147,15 +142,8 @@
 
         signInAnonymously(auth).then(() => console.log("Firebase Connected")).catch(console.error);
 
-        // --- AI 設定與診斷 ---
-        
-        window.toggleApiKeyInput = function() {
-            const section = document.getElementById('apiKeySection');
-            section.classList.toggle('hidden');
-            updateKeyInfo();
-        }
-
-        function updateKeyInfo() {
+        // --- Key 管理邏輯 ---
+        function checkKeyStatus() {
             const key = localStorage.getItem('gemini_api_key');
             const display = document.getElementById('currentKeyInfo');
             if (key) {
@@ -163,55 +151,42 @@
                 if (last4 === 'Z10c') {
                     display.innerHTML = `目前 Key: <span class="text-green-600 font-bold">...${last4} (正確)</span>`;
                 } else {
-                    display.innerHTML = `目前 Key: <span class="text-red-600 font-bold">...${last4} (錯誤)</span>`;
+                    display.innerHTML = `目前 Key: <span class="text-red-600 font-bold">...${last4} (可能錯誤)</span>`;
                 }
             } else {
                 display.innerHTML = `目前 Key: <span class="text-red-500">未設定</span>`;
+                document.getElementById('apiKeySection').classList.remove('hidden');
             }
+        }
+
+        window.toggleApiKeyInput = function() {
+            const section = document.getElementById('apiKeySection');
+            section.classList.toggle('hidden');
+            checkKeyStatus();
         }
 
         window.saveApiKey = function() {
             const key = document.getElementById('geminiApiKey').value.trim();
             if (key) {
                 localStorage.setItem('gemini_api_key', key);
-                alert('Key 已儲存！正在執行連線測試...');
-                testConnection(); // 儲存後自動測試
-                updateKeyInfo();
+                alert('API Key 已儲存！請嘗試按「AI 智能排版」測試。');
+                document.getElementById('apiKeySection').classList.add('hidden');
+                checkKeyStatus();
             }
         }
 
         window.clearApiKey = function() {
             localStorage.removeItem('gemini_api_key');
             document.getElementById('geminiApiKey').value = '';
-            updateKeyInfo();
-            alert('舊 Key 已強制清除！請貼上 ...Z10c 的新 Key。');
+            checkKeyStatus();
+            alert('舊 Key 已清除！請貼上您的 Z10c 新 Key。');
         }
 
-        window.testConnection = async function() {
-            const apiKey = localStorage.getItem('gemini_api_key');
-            if (!apiKey) {
-                alert("❌ 尚未設定 Key！請先點擊「AI 設定」貼上 Key。");
-                window.toggleApiKeyInput();
-                return;
-            }
+        checkKeyStatus();
 
-            try {
-                const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                await model.generateContent("Test");
-                alert("✅ 連線成功！您的 AI Key (...Z10c) 可以正常運作！");
-                document.getElementById('apiKeySection').classList.add('hidden');
-            } catch (e) {
-                alert(`❌ 連線失敗！\n錯誤訊息：${e.message}\n\n請確認您貼上的是 SeaAi 專案的 Key (...Z10c)！`);
-                window.toggleApiKeyInput();
-            }
-        }
-
-        updateKeyInfo();
-
-        // --- AI 排版核心 ---
+        // --- AI 核心邏輯 (v6.0 SDK 升級版) ---
         async function tryGenerateContent(genAI, prompt, modelNames, index = 0) {
-            if (index >= modelNames.length) throw new Error("所有模型嘗試失敗，請檢查 API Key 是否正確。");
+            if (index >= modelNames.length) throw new Error("Key 權限不足或模型不可用。請確認 Key 結尾是否為 Z10c！");
             const modelName = modelNames[index];
             try {
                 const model = genAI.getGenerativeModel({ model: modelName });
@@ -227,7 +202,7 @@
         window.rewriteWithAI = async function() {
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) {
-                alert("請先設定 API Key！");
+                alert("請先點擊右上角「AI 設定」輸入 Key！");
                 window.toggleApiKeyInput();
                 return;
             }
