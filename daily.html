@@ -69,10 +69,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 定義標籤顏色：這裡新增了 '盤中分析' (Teal色系)
+        // 新增了盤中分析的紅色標籤
         const categoryColors = {
             '盤前分析': 'bg-blue-100 text-blue-700 border-blue-200',
-            '盤中分析': 'bg-teal-100 text-teal-700 border-teal-200', 
+            '盤中分析': 'bg-red-100 text-red-700 border-red-200',
             '盤後分析': 'bg-indigo-100 text-indigo-700 border-indigo-200',
             '周末分析': 'bg-purple-100 text-purple-700 border-purple-200'
         };
@@ -80,31 +80,26 @@
         const container = document.getElementById('postsContainer');
 
         function startListening() {
-            // 讀取 "posts" 資料夾
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             
             onSnapshot(q, (snapshot) => {
-                container.innerHTML = ''; 
+                container.innerHTML = '';
                 let hasContent = false;
 
                 snapshot.forEach((doc) => {
                     const post = doc.data();
                     
-                    // 過濾掉心態分享，只顯示分析類文章
                     if (post.category !== '心態分享') {
                         hasContent = true;
                         const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit' }) : '剛剛';
                         const badgeClass = categoryColors[post.category] || 'bg-gray-100 text-gray-700';
 
-                        // 判斷是否為盤中分析，若是則加入閃電圖示
-                        const iconHtml = post.category === '盤中分析' ? '<i data-lucide="zap" class="w-3 h-3 mr-1"></i>' : '';
-
                         const html = `
                             <article class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition duration-300">
                                 <div class="p-6">
                                     <div class="flex items-center justify-between mb-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-bold border ${badgeClass} flex items-center">
-                                            ${iconHtml}${post.category}
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold border ${badgeClass}">
+                                            ${post.category}
                                         </span>
                                         <span class="text-sm text-slate-400 font-mono flex items-center gap-1">
                                             <i data-lucide="clock" class="w-3 h-3"></i> ${date}
@@ -133,21 +128,19 @@
                 container.innerHTML = `
                     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center max-w-md mx-auto">
                         <i data-lucide="lock" class="w-10 h-10 mx-auto mb-3 text-red-500"></i>
-                        <h3 class="font-bold text-lg mb-2">讀取受限</h3>
-                        <p class="text-sm mb-4">系統正在嘗試重新連線，請稍候...</p>
+                        <h3 class="font-bold text-lg mb-2">權限不足</h3>
+                        <p class="text-sm mb-4">請前往 Firebase Console 開啟 "Anonymous Auth"。</p>
                     </div>`;
                 lucide.createIcons();
             });
         }
 
-        // 強行讀取模式：確保即使 Auth 有問題也能看到公開資料
         signInAnonymously(auth)
             .then(() => { startListening(); })
             .catch((error) => {
                 console.warn("Auth failed, trying direct access...", error);
                 startListening();
             });
-
     </script>
 </body>
 </html>

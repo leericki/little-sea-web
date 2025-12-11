@@ -3,57 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海觀察室 | 盤勢分析</title>
+    <title>小海控制台 | 發文系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai@0.12.0"
+        }
+      }
+    </script>
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
-        .line-clamp-3 {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
+        .login-screen { display: flex; }
+        .dashboard-screen { display: none; }
+        @keyframes shine {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+        .ai-loading {
+            background: linear-gradient(to right, #4f46e5 20%, #818cf8 40%, #818cf8 60%, #4f46e5 80%);
+            background-size: 200% auto;
+            animation: shine 2s linear infinite;
+            pointer-events: none;
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
-    <!-- Header -->
-    <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-slate-200">
-        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+<body>
+
+    <!-- 1. 登入畫面 -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center login-screen px-4">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-white text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">管理員登入</h2>
+                <p class="text-gray-500 text-sm mt-2">請輸入管理密碼進入發文系統</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <input type="password" id="passwordInput" placeholder="請輸入密碼..." 
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-center tracking-widest text-lg">
+                </div>
+                <button onclick="checkLogin()" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200 transform active:scale-95">
+                    驗證身分
+                </button>
+                <div class="text-center">
+                    <a href="index.html" class="text-sm text-gray-400 hover:text-gray-600">回首頁</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 發文後台 -->
+    <div id="dashboardSection" class="min-h-screen dashboard-screen flex-col">
+        <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
             <div class="flex items-center gap-2">
-                <i data-lucide="newspaper" class="text-blue-600 w-6 h-6"></i>
-                <h1 class="text-xl font-bold text-slate-800">小海觀察室</h1>
+                <i class="fas fa-pen-nib text-blue-600"></i>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-purple-500 bg-purple-100 px-2 py-1 rounded-full ml-1">v3.1</span></h1>
             </div>
-            <a href="index.html" class="text-sm text-slate-500 hover:text-blue-600 transition flex items-center gap-1">
-                <i data-lucide="home" class="w-4 h-4"></i> 回首頁
-            </a>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
-        <div id="postsContainer" class="space-y-6">
-            <!-- Loading State -->
-            <div class="text-center py-20 text-slate-400">
-                <i data-lucide="loader-2" class="w-10 h-10 animate-spin mx-auto mb-3 text-blue-500"></i>
-                <p>正在同步最新的分析...</p>
-                <p class="text-xs mt-2 text-slate-300">連線中...</p>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleApiKeyInput()" class="text-gray-500 hover:text-purple-600 text-sm font-medium transition" title="設定 AI Key">
+                    <i class="fas fa-robot mr-1"></i> AI 設定
+                </button>
+                <a href="index.html" class="text-gray-500 hover:text-blue-600 text-sm font-medium transition">
+                    <i class="fas fa-home mr-1"></i> 回首頁
+                </a>
+                <button onclick="logout()" class="text-gray-500 hover:text-red-500 text-sm font-medium transition">
+                    <i class="fas fa-sign-out-alt mr-1"></i> 登出
+                </button>
             </div>
+        </nav>
+
+        <div id="apiKeySection" class="hidden bg-purple-50 border-b border-purple-100 p-4">
+            <div class="max-w-3xl mx-auto flex gap-2 items-center">
+                <i class="fas fa-key text-purple-500"></i>
+                <input type="password" id="geminiApiKey" placeholder="在此貼上您的 Google Gemini API Key" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
+                <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700">儲存 Key</button>
+            </div>
+            <p class="text-xs text-purple-400 max-w-3xl mx-auto mt-1 ml-6">* Key 會儲存在您的瀏覽器中。</p>
         </div>
-    </main>
 
-    <footer class="bg-white py-8 border-t border-slate-200 text-center text-slate-400 text-sm mt-auto">
-        &copy; 2025 小海的做夢故事. All rights reserved.
-    </footer>
+        <main class="flex-1 max-w-3xl w-full mx-auto p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-700">撰寫新文章</h3>
+                    <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm font-bold py-2 px-4 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-2">
+                        <i class="fas fa-magic"></i> AI 智能排版
+                    </button>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <!-- 標題 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">文章標題</label>
+                        <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="標題會由 AI 自動生成...">
+                    </div>
 
-    <script>lucide.createIcons();</script>
+                    <!-- 分類 (已新增盤中分析) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">文章分類 (AI 會根據此選項決定排版格式)</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="盤前分析" class="peer sr-only" checked>
+                                <div class="text-center py-2 border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:bg-gray-50 transition">盤前分析</div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="盤中分析" class="peer sr-only">
+                                <div class="text-center py-2 border rounded-lg peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 hover:bg-gray-50 transition font-bold">🔥 盤中分析</div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="盤後分析" class="peer sr-only">
+                                <div class="text-center py-2 border rounded-lg peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:bg-gray-50 transition">盤後分析</div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="周末分析" class="peer sr-only">
+                                <div class="text-center py-2 border rounded-lg peer-checked:bg-purple-600 peer-checked:text-white peer-checked:border-purple-600 hover:bg-gray-50 transition">周末分析</div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="category" value="心態分享" class="peer sr-only">
+                                <div class="text-center py-2 border rounded-lg peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 hover:bg-gray-50 transition">心態分享</div>
+                            </label>
+                        </div>
+                    </div>
 
-    <!-- Firebase Script -->
+                    <!-- 內容 -->
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="block text-sm font-medium text-gray-700">內容 (輸入筆記，AI 幫您轉成完整戰報)</label>
+                            <span class="text-xs text-gray-400">支援換行</span>
+                        </div>
+                        <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y font-sans text-base leading-relaxed" placeholder="請輸入市場數據或筆記..."></textarea>
+                    </div>
+
+                    <!-- 按鈕 -->
+                    <button id="submitBtn" onclick="submitPost()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-[0.98] flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> 發布文章
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { GoogleGenerativeAI } from "@google/generative-ai";
 
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
@@ -69,79 +168,190 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 新增 '盤中分析' 顏色
-        const categoryColors = {
-            '盤前分析': 'bg-blue-100 text-blue-700 border-blue-200',
-            '盤中分析': 'bg-teal-100 text-teal-700 border-teal-200', // 新增這個
-            '盤後分析': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-            '周末分析': 'bg-purple-100 text-purple-700 border-purple-200'
-        };
+        signInAnonymously(auth).then(() => console.log("Firebase Connected")).catch(console.error);
 
-        const container = document.getElementById('postsContainer');
-
-        function startListening() {
-            const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-            
-            onSnapshot(q, (snapshot) => {
-                container.innerHTML = ''; 
-                let hasContent = false;
-
-                snapshot.forEach((doc) => {
-                    const post = doc.data();
-                    
-                    if (post.category !== '心態分享') {
-                        hasContent = true;
-                        const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit' }) : '剛剛';
-                        const badgeClass = categoryColors[post.category] || 'bg-gray-100 text-gray-700';
-
-                        const html = `
-                            <article class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition duration-300">
-                                <div class="p-6">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <span class="px-3 py-1 rounded-full text-xs font-bold border ${badgeClass}">
-                                            ${post.category}
-                                        </span>
-                                        <span class="text-sm text-slate-400 font-mono flex items-center gap-1">
-                                            <i data-lucide="clock" class="w-3 h-3"></i> ${date}
-                                        </span>
-                                    </div>
-                                    <h2 class="text-xl font-bold text-slate-800 mb-3">${post.title}</h2>
-                                    <div class="text-slate-600 leading-relaxed whitespace-pre-wrap">${post.content}</div>
-                                </div>
-                            </article>
-                        `;
-                        container.insertAdjacentHTML('beforeend', html);
-                    }
-                });
-                lucide.createIcons();
-
-                if (!hasContent) {
-                    container.innerHTML = `
-                        <div class="text-center py-20 text-slate-400">
-                            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
-                            <p>目前沒有盤勢分析文章。</p>
-                        </div>`;
-                    lucide.createIcons();
-                }
-            }, (error) => {
-                console.error("Firestore Error:", error);
-                container.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center max-w-md mx-auto">
-                        <i data-lucide="lock" class="w-10 h-10 mx-auto mb-3 text-red-500"></i>
-                        <h3 class="font-bold text-lg mb-2">權限不足</h3>
-                        <p class="text-sm mb-4">請前往 Firebase Console 開啟 "Anonymous Auth"。</p>
-                    </div>`;
-                lucide.createIcons();
-            });
+        // --- AI 邏輯 ---
+        
+        window.toggleApiKeyInput = function() {
+            const section = document.getElementById('apiKeySection');
+            section.classList.toggle('hidden');
         }
 
-        signInAnonymously(auth)
-            .then(() => { startListening(); })
-            .catch((error) => {
-                console.warn("Auth failed, trying direct access...", error);
-                startListening();
-            });
+        window.saveApiKey = function() {
+            const key = document.getElementById('geminiApiKey').value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                alert('API Key 已儲存！');
+                document.getElementById('apiKeySection').classList.add('hidden');
+            }
+        }
 
+        const savedKey = localStorage.getItem('gemini_api_key');
+        if (savedKey) document.getElementById('geminiApiKey').value = savedKey;
+
+        window.rewriteWithAI = async function() {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) {
+                alert("請先輸入 API Key！");
+                window.toggleApiKeyInput();
+                return;
+            }
+
+            const contentArea = document.getElementById('postContent');
+            const originalText = contentArea.value;
+            // 獲取當前選中的分類
+            const selectedCategory = document.querySelector('input[name="category"]:checked').value;
+
+            if (!originalText || originalText.length < 5) {
+                alert("請先輸入內容草稿！");
+                return;
+            }
+
+            const aiBtn = document.getElementById('aiRewriteBtn');
+            const originalBtnText = aiBtn.innerHTML;
+            
+            aiBtn.disabled = true;
+            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 小海分析中...';
+            aiBtn.classList.add('ai-loading');
+
+            try {
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+
+                const prompt = `
+你是一位專業操盤手「小海」。
+用戶目前選擇的分類是：【${selectedCategory}】。
+請將用戶提供的資料，依照對應的【小海觀察室完整框架】重新撰寫。
+
+【🚫 格式禁令】：
+1. 嚴格禁止使用 # 標題、* 列表 等 Markdown。
+2. 請使用純文字排版，用「換行」分段。
+3. 允許使用「**粗體**」標示重點。
+4. 使用大量 Emoji (🔥, ✅, ⚠️, 🟢, 🔴, 💡)。
+
+【📋 內容框架】：
+
+如果分類是【盤中分析】：
+標題：【小海盤中觀察室】YYYY/MM/DD HH:MM
+## 🔥 即時戰情
+- **目前大盤位階**：(攻擊/盤整/修正)
+- **強勢族群**：(列出個股與漲幅)
+- **弱勢族群**：
+- **盤中量能預估**：(攻擊量/縮量)
+- **小海操作建議**：(綁手/試單/加碼/減碼)
+
+如果分類是【盤前/盤後/周末】：
+標題：【小海觀察室】YYYY/MM/DD
+## 🎯 核心戰略
+- 前日總結
+- **今日主軸** 🔥🔥🔥
+- **操作策略**：(依據早盤第一根五分K高低，突破積極，跌破5T減碼)
+
+一、🌍 市場數據回顧
+二、📈 技術面分析
+三、💰 籌碼面解析
+四、🔥 產業重磅炸彈
+五、💡 操作策略
+六、⚠️ 風險提示
+七、💡 小海總結
+
+【🗣️ 語氣】：專業、冷靜。自稱「小海」。
+結尾：📢 提醒：本報告僅供參考，投資決策請依個人判斷 © 小海的做夢故事
+
+用戶草稿：
+${originalText}
+`;
+
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                let text = response.text();
+
+                text = text.replace(/#/g, '').replace(/\*\*/g, '').replace(/\*/g, '・');
+
+                const titleMatch = text.match(/【小海.*?】.*?\n/);
+                if (titleMatch) {
+                    document.getElementById('postTitle').value = titleMatch[0].trim();
+                }
+
+                contentArea.value = text;
+                
+            } catch (error) {
+                console.error("AI Error:", error);
+                let errorMsg = "AI 排版失敗。";
+                if (error.message.includes("404")) {
+                    errorMsg += "\n原因：找不到模型或 API Key 權限不足。\n請嘗試建立新的 API Key。";
+                } else {
+                    errorMsg += "\n錯誤：" + error.message;
+                }
+                alert(errorMsg);
+            } finally {
+                aiBtn.disabled = false;
+                aiBtn.innerHTML = originalBtnText;
+                aiBtn.classList.remove('ai-loading');
+            }
+        }
+
+        window.submitPost = async function() {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.querySelector('input[name="category"]:checked').value;
+            const btn = document.getElementById('submitBtn');
+
+            if (!title || !content) {
+                alert("標題和內容不能為空！");
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 發布中...';
+
+                await addDoc(collection(db, "posts"), {
+                    title: title,
+                    content: content,
+                    category: category,
+                    author: "小海",
+                    timestamp: serverTimestamp()
+                });
+
+                alert("發布成功！");
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postContent').value = '';
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert("發布失敗，請檢查網路連線。");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> 發布文章';
+            }
+        }
+    </script>
+
+    <script>
+        const ADMIN_PASSWORD = "0712"; 
+
+        function checkLogin() {
+            const pwd = document.getElementById('passwordInput').value;
+            if (pwd === ADMIN_PASSWORD) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('dashboardSection').style.display = 'flex';
+                localStorage.setItem('littlesea_admin', 'true');
+            } else {
+                alert("密碼錯誤，請重新輸入！");
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('littlesea_admin');
+            location.reload();
+        }
+
+        if (localStorage.getItem('littlesea_admin') === 'true') {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'flex';
+        }
     </script>
 </body>
 </html>
