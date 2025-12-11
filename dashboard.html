@@ -6,7 +6,7 @@
     <title>小海控制台 | 發文系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- 🟢 關鍵修正：使用最新版 SDK 以支援 1.5 Flash 模型 -->
+    <!-- 使用最新版 SDK 以確保 AI 模型相容性 -->
     <script type="importmap">
       {
         "imports": {
@@ -52,7 +52,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v6.0 核心升級版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-green-600 px-2 py-1 rounded-full ml-1 shadow-sm">v6.0 完美版</span></h1>
             </div>
             <div class="flex items-center gap-4">
                 <button onclick="toggleApiKeyInput()" class="text-gray-500 hover:text-purple-600 text-sm font-medium transition" title="設定 AI Key">
@@ -68,12 +68,12 @@
             <div class="max-w-3xl mx-auto flex flex-col gap-3">
                 <div class="flex gap-2 items-center">
                     <i class="fas fa-key text-purple-500"></i>
-                    <input type="password" id="geminiApiKey" placeholder="請貼上 ...Z10c 結尾的 Key" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
+                    <input type="password" id="geminiApiKey" placeholder="請貼上 SeaAi 專案的 Key (...Z10c)" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
                     <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700">儲存新 Key</button>
                 </div>
                 <div class="flex justify-between items-center text-xs text-purple-600 ml-6">
-                    <span id="currentKeyInfo">目前 Key: 未設定</span>
-                    <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold">🗑️ 強制清除舊 Key</button>
+                    <span>💡 請使用 <b>SeaAi</b> 專案的 Key (點擊列表中的 ...Z10c 複製)</span>
+                    <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold">🗑️ 清除舊 Key 重設</button>
                 </div>
             </div>
         </div>
@@ -126,6 +126,9 @@
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
+        // ==========================================
+        //  您的正確 Firebase 設定
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
             authDomain: "littlesea-web.firebaseapp.com",
@@ -135,34 +138,19 @@
             appId: "1:796678723012:web:6c501411714c2f49960091",
             measurementId: "G-W8GSXYYY9L"
         };
+        // ==========================================
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // 登入 Firebase (解決 Auth 錯誤)
         signInAnonymously(auth).then(() => console.log("Firebase Connected")).catch(console.error);
 
         // --- Key 管理邏輯 ---
-        function checkKeyStatus() {
-            const key = localStorage.getItem('gemini_api_key');
-            const display = document.getElementById('currentKeyInfo');
-            if (key) {
-                const last4 = key.slice(-4);
-                if (last4 === 'Z10c') {
-                    display.innerHTML = `目前 Key: <span class="text-green-600 font-bold">...${last4} (正確)</span>`;
-                } else {
-                    display.innerHTML = `目前 Key: <span class="text-red-600 font-bold">...${last4} (可能錯誤)</span>`;
-                }
-            } else {
-                display.innerHTML = `目前 Key: <span class="text-red-500">未設定</span>`;
-                document.getElementById('apiKeySection').classList.remove('hidden');
-            }
-        }
-
         window.toggleApiKeyInput = function() {
             const section = document.getElementById('apiKeySection');
             section.classList.toggle('hidden');
-            checkKeyStatus();
         }
 
         window.saveApiKey = function() {
@@ -171,20 +159,19 @@
                 localStorage.setItem('gemini_api_key', key);
                 alert('API Key 已儲存！請嘗試按「AI 智能排版」測試。');
                 document.getElementById('apiKeySection').classList.add('hidden');
-                checkKeyStatus();
             }
         }
 
         window.clearApiKey = function() {
             localStorage.removeItem('gemini_api_key');
             document.getElementById('geminiApiKey').value = '';
-            checkKeyStatus();
-            alert('舊 Key 已清除！請貼上您的 Z10c 新 Key。');
+            alert('舊 Key 已清除！請貼上 SeaAi 專案的新 Key (...Z10c)。');
         }
 
-        checkKeyStatus();
+        const savedKey = localStorage.getItem('gemini_api_key');
+        if (savedKey) document.getElementById('geminiApiKey').value = savedKey;
 
-        // --- AI 核心邏輯 (v6.0 SDK 升級版) ---
+        // --- AI 核心邏輯 (v6.0) ---
         async function tryGenerateContent(genAI, prompt, modelNames, index = 0) {
             if (index >= modelNames.length) throw new Error("Key 權限不足或模型不可用。請確認 Key 結尾是否為 Z10c！");
             const modelName = modelNames[index];
@@ -300,6 +287,7 @@ ${originalText}
 
             } catch (error) {
                 let errorMsg = "AI 排版失敗。\n錯誤：" + error.message;
+                if (error.message.includes("404")) errorMsg += "\n原因：Key 權限不足。\n請按「AI 設定」->「清除」-> 貼上 SeaAi 專案的 Key (...Z10c)";
                 alert(errorMsg);
             } finally {
                 aiBtn.disabled = false;
@@ -326,7 +314,7 @@ ${originalText}
                 location.reload();
             } catch (e) {
                 console.error(e);
-                alert("發布失敗，請檢查網路。");
+                alert("發布失敗，請檢查網路連線。");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-paper-plane"></i> 發布文章';
