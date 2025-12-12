@@ -6,43 +6,68 @@
     <title>小海控制台 | 發文系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- 🟢 使用最新版 SDK 以支援所有模型 -->
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai@latest"
-        }
-      }
-    </script>
+    <!-- 引入 marked.js 用於預覽渲染 Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
         .login-screen { display: flex; }
         .dashboard-screen { display: none; }
+        
+        /* 預覽區專屬樣式 (讓盤中字體顯示出來) */
+        .preview-content { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            line-height: 1.8; 
+            color: #334155; 
+            font-size: 15px;
+        }
+        /* 針對 Markdown 的標題做樣式 */
+        .preview-content h1, .preview-content h2, .preview-content h3 { 
+            font-weight: 800; 
+            color: #1e293b; 
+            margin-top: 1.2rem; 
+            margin-bottom: 0.6rem; 
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.2rem;
+        }
+        /* 重點強調樣式 (紅色粗體) */
+        .preview-content strong { 
+            color: #dc2626; 
+            font-weight: 900; 
+            background-color: #fef2f2; 
+            padding: 0 4px; 
+            border-radius: 4px; 
+        }
+        .preview-content ul { 
+            list-style-type: disc; 
+            padding-left: 1.5rem; 
+            margin-bottom: 1rem;
+        }
+        .preview-content li { margin-bottom: 0.25rem; }
+        
+        /* 載入動畫 */
+        @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
         .ai-loading {
             background: linear-gradient(to right, #4f46e5 20%, #818cf8 40%, #818cf8 60%, #4f46e5 80%);
             background-size: 200% auto;
             animation: shine 2s linear infinite;
             pointer-events: none;
         }
-        @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
     </style>
 </head>
-<body>
+<body class="h-screen flex flex-col overflow-hidden">
 
     <!-- 1. 登入畫面 -->
-    <div id="loginSection" class="min-h-screen flex items-center justify-center login-screen px-4">
+    <div id="loginSection" class="min-h-screen flex items-center justify-center login-screen px-4 absolute inset-0 z-50 bg-gray-100">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-lock text-white text-2xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-800">管理員登入</h2>
-                <p class="text-gray-500 text-sm mt-2">請輸入管理密碼進入發文系統</p>
             </div>
             <div class="space-y-4">
-                <input type="password" id="passwordInput" placeholder="請輸入密碼..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg">
+                <input type="password" id="passwordInput" placeholder="請輸入密碼 (0712)" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg">
                 <button onclick="checkLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition transform active:scale-95">驗證身分</button>
                 <div class="text-center"><a href="index.html" class="text-sm text-gray-400 hover:text-gray-600">回首頁</a></div>
             </div>
@@ -50,78 +75,101 @@
     </div>
 
     <!-- 2. 發文後台 -->
-    <div id="dashboardSection" class="min-h-screen dashboard-screen flex-col">
-        <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+    <div id="dashboardSection" class="h-full dashboard-screen flex-col">
+        <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v11.0 最終版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-red-600 px-2 py-1 rounded-full ml-1 shadow-sm">v15.0 直連版</span></h1>
             </div>
-            <div class="flex items-center gap-4">
-                <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">
-                    檢查 Key 中...
-                </div>
-                <button onclick="toggleApiKeyInput()" class="text-gray-500 hover:text-purple-600 text-sm font-medium transition" title="設定 AI Key">
+            <div class="flex items-center gap-3">
+                <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
+                <button onclick="toggleApiKeyInput()" class="text-gray-600 hover:text-purple-600 text-sm font-medium bg-gray-100 px-3 py-2 rounded-lg transition">
                     <i class="fas fa-robot mr-1"></i> AI 設定
                 </button>
-                <a href="index.html" class="text-gray-500 hover:text-blue-600 text-sm font-medium transition"><i class="fas fa-home mr-1"></i> 首頁</a>
-                <button onclick="logout()" class="text-gray-500 hover:text-red-500 text-sm font-medium transition"><i class="fas fa-sign-out-alt mr-1"></i> 登出</button>
+                <button onclick="logout()" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium transition">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
         </nav>
 
-        <!-- AI Key 設定區 -->
-        <div id="apiKeySection" class="hidden bg-purple-50 border-b border-purple-100 p-4">
-            <div class="max-w-3xl mx-auto flex flex-col gap-3">
+        <!-- AI Key 設定面板 -->
+        <div id="apiKeySection" class="hidden bg-purple-50 border-b border-purple-100 p-4 shadow-inner">
+            <div class="max-w-4xl mx-auto flex flex-col gap-3">
                 <div class="flex gap-2 items-center">
                     <i class="fas fa-key text-purple-500"></i>
-                    <input type="password" id="geminiApiKey" placeholder="請貼上 SeaAi 專案的 Key (...Z10c)" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
-                    <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700">儲存新 Key</button>
+                    <input type="password" id="geminiApiKey" placeholder="請貼上 SeaAi 專案的新 Key (...Z10c)" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
+                    <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 shadow-sm">儲存</button>
                 </div>
                 <div class="flex justify-between items-center text-xs text-purple-600 ml-6">
                     <span class="font-bold">💡 請務必使用 SeaAi 專案的 Key (結尾是 Z10c)</span>
-                    <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold">🗑️ 強制清除舊 Key</button>
+                    <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold bg-white px-2 py-1 rounded border border-red-200">🗑️ 強制清除舊 Key</button>
                 </div>
             </div>
         </div>
 
-        <main class="flex-1 max-w-3xl w-full mx-auto p-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                    <h3 class="font-bold text-gray-700">撰寫新文章</h3>
-                    <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm font-bold py-2 px-4 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-2">
-                        <i class="fas fa-magic"></i> AI 智能排版
-                    </button>
-                </div>
-                
-                <div class="p-6 space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">文章標題</label>
-                        <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="標題會由 AI 自動生成...">
-                    </div>
+        <!-- 主編輯區 (左右分割) -->
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            
+            <!-- 左側：編輯區 -->
+            <div class="flex-1 flex flex-col border-r border-gray-200 bg-white overflow-y-auto">
+                <div class="p-6 space-y-6 max-w-3xl mx-auto w-full">
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">文章標題</label>
+                            <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="標題會由 AI 自動生成...">
+                        </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">文章分類 (AI 會根據此選項套用不同模板)</label>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <label class="cursor-pointer"><input type="radio" name="category" value="盤前分析" class="peer sr-only" checked><div class="text-center py-2 border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white hover:bg-gray-50 transition">盤前分析</div></label>
-                            <label class="cursor-pointer"><input type="radio" name="category" value="盤中分析" class="peer sr-only"><div class="text-center py-2 border-2 border-red-100 rounded-lg peer-checked:bg-red-600 peer-checked:text-white hover:bg-red-50 transition font-bold text-red-600">🔥 盤中分析</div></label>
-                            <label class="cursor-pointer"><input type="radio" name="category" value="盤後分析" class="peer sr-only"><div class="text-center py-2 border rounded-lg peer-checked:bg-indigo-600 peer-checked:text-white hover:bg-gray-50 transition">盤後分析</div></label>
-                            <label class="cursor-pointer"><input type="radio" name="category" value="周末分析" class="peer sr-only"><div class="text-center py-2 border rounded-lg peer-checked:bg-purple-600 peer-checked:text-white hover:bg-gray-50 transition">周末分析</div></label>
-                            <label class="cursor-pointer"><input type="radio" name="category" value="心態分享" class="peer sr-only"><div class="text-center py-2 border rounded-lg peer-checked:bg-amber-500 peer-checked:text-white hover:bg-gray-50 transition">心態分享</div></label>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">文章分類 <span class="text-xs font-normal text-gray-500">(影響 AI 排版)</span></label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="cursor-pointer"><input type="radio" name="category" value="盤前分析" class="peer sr-only" checked><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-blue-600 peer-checked:text-white hover:bg-gray-50 transition">盤前</div></label>
+                                <!-- 🔥 盤中分析按鈕 -->
+                                <label class="cursor-pointer"><input type="radio" name="category" value="盤中分析" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-red-100 rounded-md peer-checked:bg-red-600 peer-checked:text-white font-bold text-red-600 hover:bg-red-50 transition">🔥 盤中</div></label>
+                                <label class="cursor-pointer"><input type="radio" name="category" value="盤後分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-indigo-600 peer-checked:text-white hover:bg-gray-50 transition">盤後</div></label>
+                                <label class="cursor-pointer"><input type="radio" name="category" value="周末分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-purple-600 peer-checked:text-white hover:bg-gray-50 transition">周末</div></label>
+                                <label class="cursor-pointer"><input type="radio" name="category" value="心態分享" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-amber-500 peer-checked:text-white hover:bg-gray-50 transition">心態</div></label>
+                            </div>
                         </div>
                     </div>
 
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="block text-sm font-medium text-gray-700">內容 (輸入筆記，AI 幫您轉成完整戰報)</label>
-                            <span class="text-xs text-gray-400">支援換行</span>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between items-end">
+                            <label class="block text-sm font-bold text-gray-700">內容編輯 <span class="text-xs font-normal text-gray-400">(輸入筆記，AI 幫你排版)</span></label>
+                            <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-1">
+                                <i class="fas fa-magic"></i> AI 智能排版
+                            </button>
                         </div>
-                        <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y font-sans text-base leading-relaxed" placeholder="請輸入市場數據或筆記..."></textarea>
+                        <!-- 高度加高，方便編輯 -->
+                        <textarea id="postContent" rows="15" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y font-mono text-sm leading-relaxed bg-gray-50" placeholder="請輸入市場數據或簡單筆記..." oninput="updatePreview()"></textarea>
                     </div>
 
-                    <button id="submitBtn" onclick="submitPost()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-[0.98] flex items-center justify-center gap-2">
-                        <i class="fas fa-paper-plane"></i> 發布文章
+                    <button id="submitBtn" onclick="submitPost()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-[0.98] flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> 確認發布文章
                     </button>
                 </div>
             </div>
+
+            <!-- 右側：即時預覽區 (顯示紅色粗體效果) -->
+            <div class="hidden md:flex flex-1 flex-col bg-slate-50 border-l border-gray-200">
+                <div class="p-3 bg-white border-b border-gray-200 font-bold text-gray-500 text-sm flex justify-between items-center">
+                    <span><i class="fas fa-eye mr-1"></i> 即時預覽 (紅字特效)</span>
+                    <span class="text-xs bg-slate-100 px-2 py-1 rounded">模擬讀者視角</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-lg mx-auto min-h-[500px]">
+                        <h2 id="previewTitle" class="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-gray-100 pb-4">文章標題...</h2>
+                        <!-- 這裡是重點：預覽內容 -->
+                        <div id="previewContent" class="preview-content">
+                            <span class="text-gray-300 text-center block mt-10">
+                                內容預覽將顯示於此...<br>
+                                AI 生成的 **重點** 會自動變 <strong class="bg-red-50 text-red-600 px-1 rounded">紅色粗體</strong>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -129,13 +177,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { GoogleGenerativeAI } from "@google/generative-ai";
 
         // ==========================================
-        //  🟢 修正：填入您提供的正確 Firebase Key (...PmKE)
+        //  您的正確 Firebase 設定 (...PmKE)
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", // 正確的 Firebase Key
+            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", // 正確的
             authDomain: "littlesea-web.firebaseapp.com",
             projectId: "littlesea-web",
             storageBucket: "littlesea-web.firebasestorage.app",
@@ -150,17 +197,34 @@
 
         signInAnonymously(auth).then(() => console.log("Firebase Connected")).catch(console.error);
 
-        // --- Key 管理邏輯 ---
+        // --- 預覽功能 (將 Markdown **粗體** 轉為 HTML 紅色粗體) ---
+        window.updatePreview = function() {
+            const title = document.getElementById('postTitle').value;
+            let content = document.getElementById('postContent').value;
+            
+            document.getElementById('previewTitle').innerText = title || "文章標題...";
+            
+            if (content) {
+                // 使用 marked.js 渲染基本 Markdown
+                let htmlContent = marked.parse(content);
+                // 額外魔法：將 <strong> (即 Markdown 的 **) 轉為紅色粗體樣式
+                document.getElementById('previewContent').innerHTML = htmlContent;
+            } else {
+                document.getElementById('previewContent').innerHTML = '<span class="text-gray-300 text-center block mt-10">內容預覽...</span>';
+            }
+        }
+
+        // --- Key 管理 ---
         function checkKeyStatus() {
             const key = localStorage.getItem('gemini_api_key');
             const display = document.getElementById('keyStatusDisplay');
             if (key) {
                 const last4 = key.slice(-4);
                 if (last4 === 'Z10c') {
-                    display.innerHTML = `<span class="text-green-600 font-bold">● AI Key 正確 (...${last4})</span>`;
-                    display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-green-100 border border-green-200";
+                    display.innerHTML = `<span class="text-green-600 font-bold">● Key 正確 (...${last4})</span>`;
+                    display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-green-50 border border-green-200";
                 } else {
-                    display.innerHTML = `<span class="text-red-600 font-bold">● AI Key 錯誤 (...${last4})</span>`;
+                    display.innerHTML = `<span class="text-red-600 font-bold">● Key 錯誤 (...${last4})</span>`;
                     display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-red-100 border border-red-200";
                 }
             } else {
@@ -178,7 +242,7 @@
             const key = document.getElementById('geminiApiKey').value.trim();
             if (key) {
                 localStorage.setItem('gemini_api_key', key);
-                alert('API Key 已儲存！請嘗試按「AI 智能排版」測試。');
+                alert('API Key 已儲存！');
                 document.getElementById('apiKeySection').classList.add('hidden');
                 checkKeyStatus();
             }
@@ -188,25 +252,31 @@
             localStorage.removeItem('gemini_api_key');
             document.getElementById('geminiApiKey').value = '';
             checkKeyStatus();
-            alert('舊 Key 已清除！請貼上 SeaAi 專案的新 Key (...Z10c)。');
+            alert('舊 Key 已清除！請貼上 SeaAi 專案的新 Key。');
         }
 
         checkKeyStatus();
 
-        // --- AI 核心邏輯 (v11.0 終極備援) ---
-        async function tryGenerateContent(genAI, prompt, modelNames, index = 0) {
-            if (index >= modelNames.length) throw new Error("Key 權限不足或模型不可用。請確認 Key 結尾是否為 Z10c！");
-            const modelName = modelNames[index];
-            try {
-                console.log(`正在嘗試模型: ${modelName}`);
-                const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                return response.text();
-            } catch (error) {
-                console.warn(`模型 ${modelName} 失敗，嘗試下一個...`);
-                return tryGenerateContent(genAI, prompt, modelNames, index + 1);
+        // --- 🟢 AI 核心邏輯 (v15.0 直連版 - 不使用 SDK) ---
+        // 這能解決 404 Not Found 的問題，因為我們直接呼叫 REST API
+        async function fetchGeminiDirectly(model, prompt, apiKey) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message || response.statusText);
             }
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
         }
 
         window.rewriteWithAI = async function() {
@@ -233,9 +303,10 @@
             aiBtn.classList.add('ai-loading');
 
             try {
-                const genAI = new GoogleGenerativeAI(apiKey);
-                // 🟢 終極備援：如果新版不行，自動切回舊版 Pro，保證能用
-                const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.5-flash-8b", "gemini-pro", "gemini-1.0-pro"];
+                // 🟢 策略：優先使用 gemini-1.5-flash，失敗則切換 gemini-pro
+                const modelsToTry = ["gemini-1.5-flash", "gemini-pro"];
+                let generatedText = null;
+                let lastError = null;
 
                 const prompt = `
 你是一位專業操盤手「小海」。
@@ -243,45 +314,33 @@
 請將用戶提供的資料，依照對應框架重新撰寫。
 
 【🚫 格式規則】：
-1. 嚴格禁止使用 Markdown (#, *, -)。
-2. ⚠️ 盤中分析特效：請大量使用 HTML 標籤來強化視覺！
-   - 關鍵數字、漲跌幅：請用 <b style="color:red;">紅色粗體</b>
-   - 族群名稱：請用 <b>黑色粗體</b>
+1. 嚴格禁止使用 Markdown Header (# 標題)，請改用粗體 **標題** 區分。
+2. ⚠️ 盤中分析特效：請使用 Markdown 的 **粗體** (兩個星號) 來標示重點、數字、漲跌幅。
+   (範例：**台積電** 上漲 **2%**，請務必加粗！)
 3. 使用大量 Emoji (🔥, ✅, ⚠️, 🟢, 🔴)。
 
 【📋 內容框架】：
 
 👉 如果是【盤中分析】：
-標題：【小海盤中觀察室】YYYY/MM/DD HH:MM
+標題格式：【小海盤中觀察室】YYYY/MM/DD HH:MM
 內容結構：
-<div style="border-left: 4px solid #ef4444; padding-left: 10px; margin-bottom: 15px;">
-<b>🔥 即時戰情</b>
-<br>
-・大盤位階：(攻擊/盤整/修正)
-<br>
-・盤中量能：<b style="color:red;">(預估量能)</b>，判斷：(攻擊量/縮量)
-</div>
+### 🔥 即時戰情
+- **大盤位階**：(攻擊/盤整/修正)
+- **盤中量能**：(預估量能與判斷)
 
-<div style="margin-bottom: 15px;">
-<b>⚡ 強弱勢族群</b>
-<br>
-・<b>強勢</b>：(列出族群，漲幅用<span style="color:red">紅色</span>)
-<br>
-・<b>弱勢</b>：
-</div>
+### ⚡ 強弱勢族群
+- **強勢**：(列出族群，漲幅請用 **粗體** 標示)
+- **弱勢**：
 
-<div style="background-color:#fef2f2; padding:10px; border-radius:8px;">
-<b>🎯 小海操作建議</b>
-<br>
+### 🎯 小海操作建議
 (明確指出：綁手/試單/加碼/減碼)
-</div>
 
 👉 如果是【盤前/盤後/周末】：
 標題：【小海觀察室】YYYY/MM/DD
-<b>🎯 核心戰略</b>
+### 🎯 核心戰略
 - 前日總結
-- <b style="color:red;">今日主軸</b> 🔥🔥🔥
-- <b>操作策略</b>：(依據早盤第一根五分K高低，突破積極，5T伸縮筆數跌破就減碼)
+- **今日主軸** 🔥🔥🔥
+- **操作策略**：(依據早盤第一根五分K高低，突破積極，5T伸縮筆數跌破就減碼)
 
 一、🌍 市場數據回顧
 二、📈 技術面分析
@@ -298,26 +357,41 @@
 ${originalText}
 `;
 
-                let text = await tryGenerateContent(genAI, prompt, modelsToTry);
-                
-                text = text.replace(/```html/g, '').replace(/```/g, '').replace(/\*\*/g, '');
+                // 嘗試迴圈
+                for (const model of modelsToTry) {
+                    try {
+                        console.log(`Trying model: ${model}`);
+                        generatedText = await fetchGeminiDirectly(model, prompt, apiKey);
+                        break; // 成功就跳出
+                    } catch (e) {
+                        console.warn(`Model ${model} failed:`, e);
+                        lastError = e;
+                    }
+                }
 
-                const titleMatch = text.match(/【小海.*?】.*?\n/);
+                if (!generatedText) throw lastError;
+
+                // 清理多餘符號 (如 ```markdown)
+                generatedText = generatedText.replace(/```markdown/g, '').replace(/```/g, '');
+
+                // 自動填入標題
+                const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
                 if (titleMatch) document.getElementById('postTitle').value = titleMatch[0].trim();
 
-                contentArea.value = text;
+                contentArea.value = generatedText;
+                updatePreview(); // 更新預覽
+
+                // 視覺回饋
                 contentArea.classList.add('ring-2', 'ring-purple-500');
                 setTimeout(() => contentArea.classList.remove('ring-2', 'ring-purple-500'), 1000);
 
             } catch (error) {
-                console.error("AI Error Full:", error);
-                
-                let errorMsg = "AI 排版失敗。\n\n詳細錯誤代碼：\n" + error.message;
-                if (error.message.includes("404")) {
-                    errorMsg += "\n\n🔑 關鍵原因：您目前使用的 API Key 權限不足。\n請按右上角「AI 設定」>「清除」> 貼上 SeaAi 專案的 Key (...Z10c)";
+                console.error("AI Fatal Error:", error);
+                let errorMsg = "AI 排版失敗。\n\n錯誤訊息：" + error.message;
+                if (error.message.includes("404") || error.message.includes("key")) {
+                    errorMsg += "\n\n🔑 提示：請確認右上角顯示 'Key 正確 (...Z10c)'";
                 }
                 alert(errorMsg);
-                
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalBtnText;
