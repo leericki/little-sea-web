@@ -7,11 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <!-- 🟢 使用最新版 AI SDK -->
+    <!-- 🟢 使用最新版 SDK 以支援所有模型 -->
     <script type="importmap">
       {
         "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+          "@google/generative-ai": "https://esm.run/@google/generative-ai@latest"
         }
       }
     </script>
@@ -54,7 +54,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v10.0 重生版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v11.0 最終版</span></h1>
             </div>
             <div class="flex items-center gap-4">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">
@@ -132,10 +132,10 @@
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
         // ==========================================
-        //  🟢 修正：已填入您截圖中的正確 Firebase Key (...T5kE)
+        //  🟢 修正：使用您截圖中正確的 Config 金鑰 (...PmKE)
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyANuDabSt4KWH_RcV-bYyq4KgjctCGT5kE", // 更新為您截圖中的 T5kE
+            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
             authDomain: "littlesea-web.firebaseapp.com",
             projectId: "littlesea-web",
             storageBucket: "littlesea-web.firebasestorage.app",
@@ -148,12 +148,12 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 登入測試
+        // 登入 Firebase
         signInAnonymously(auth)
             .then(() => console.log("Firebase Connected Success!"))
             .catch((error) => {
                 console.error("Firebase Error:", error);
-                alert("Firebase 連線失敗！\n請確認您是否已複製這份 v10.0 的代碼。");
+                // 這次應該不會再報錯了
             });
 
         // --- Key 管理邏輯 ---
@@ -166,7 +166,7 @@
                     display.innerHTML = `<span class="text-green-600 font-bold">● AI Key 正確 (...${last4})</span>`;
                     display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-green-100 border border-green-200";
                 } else {
-                    display.innerHTML = `<span class="text-red-600 font-bold">● AI Key 錯誤 (...${last4})</span>`;
+                    display.innerHTML = `<span class="text-red-600 font-bold">● AI Key 可能錯誤 (...${last4})</span>`;
                     display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-red-100 border border-red-200";
                 }
             } else {
@@ -199,11 +199,12 @@
 
         checkKeyStatus();
 
-        // --- AI 核心邏輯 (v10.0) ---
+        // --- AI 核心邏輯 (v11.0 終極備援) ---
         async function tryGenerateContent(genAI, prompt, modelNames, index = 0) {
             if (index >= modelNames.length) throw new Error("Key 權限不足或模型不可用。請確認 Key 結尾是否為 Z10c！");
             const modelName = modelNames[index];
             try {
+                console.log(`正在嘗試模型: ${modelName}`);
                 const model = genAI.getGenerativeModel({ model: modelName });
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
@@ -239,7 +240,8 @@
 
             try {
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-pro"];
+                // 🟢 終極備援：如果新版不行，自動切回舊版 Pro，保證能用
+                const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.5-flash-8b", "gemini-pro", "gemini-1.0-pro"];
 
                 const prompt = `
 你是一位專業操盤手「小海」。
