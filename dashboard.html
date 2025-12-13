@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | 旗艦版</title>
+    <title>小海控制台 | 文章管理系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- 引入 marked.js 用於預覽渲染 -->
@@ -25,21 +25,35 @@
 
         /* 🟢 戰報預覽樣式 (盤中特效核心) */
         .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
-        .preview-box h1, .preview-box h2, .preview-box h3 { 
-            font-weight: 900; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; 
-            border-bottom: 3px solid #e2e8f0; padding-bottom: 0.3rem; 
+        
+        /* 標題樣式 */
+        .preview-box h3 { 
+            font-weight: 900; 
+            color: #1e293b; 
+            margin-top: 1rem; 
+            margin-bottom: 0.5rem; 
+            border-bottom: 3px solid #e2e8f0; 
+            padding-bottom: 0.3rem; 
+            font-size: 1.1rem;
         }
-        /* 紅色戰報特效 */
-        .preview-box strong, .preview-box b { 
+        
+        /* 紅色戰報特效 (AI 會生成這個 class) */
+        .preview-box .red-bold { 
             color: #dc2626; 
             font-weight: 900; 
             background-color: #fef2f2; 
-            padding: 2px 6px; 
+            padding: 2px 4px; 
             border-radius: 4px; 
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
+        
+        /* 黑色粗體 */
+        .preview-box .black-bold {
+            font-weight: 900;
+            color: #000;
+        }
+
         .preview-box ul { list-style-type: none; padding-left: 0; margin-bottom: 1rem; }
-        .preview-box li { margin-bottom: 0.5rem; padding-left: 1rem; border-left: 3px solid #cbd5e1; }
+        .preview-box li { margin-bottom: 0.5rem; padding-left: 0.5rem; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
@@ -67,7 +81,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v17.0 旗艦版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v16.0 直連版</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
@@ -87,15 +101,17 @@
                     <i class="fas fa-key text-purple-500"></i>
                     <input type="password" id="geminiApiKey" placeholder="請貼上 SeaAi 專案的新 Key (...Z10c)" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
                     <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 shadow-sm">儲存</button>
+                    <button onclick="testAiConnection()" class="bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 shadow-sm flex items-center gap-1"><i class="fas fa-plug"></i> 連線測試</button>
                 </div>
                 <div class="flex justify-between items-center text-xs text-purple-600 ml-6">
-                    <span class="font-bold">💡 請使用 SeaAi 專案的 Key (結尾是 Z10c)</span>
+                    <span class="font-bold">💡 請務必使用 SeaAi 專案的 Key (結尾是 Z10c)</span>
                     <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold bg-white px-2 py-1 rounded border border-red-200">🗑️ 強制清除舊 Key</button>
                 </div>
+                <div id="connectionResult" class="ml-6 text-xs font-mono h-4"></div>
             </div>
         </div>
 
-        <!-- 主內容區 -->
+        <!-- 主內容區 (三欄分割: 列表 | 編輯 | 預覽) -->
         <main class="flex-1 flex overflow-hidden flex-col md:flex-row">
             
             <!-- 左側：文章列表 -->
@@ -113,13 +129,12 @@
             <div class="flex-1 flex flex-col border-r border-gray-200 bg-white overflow-y-auto">
                 <div class="p-6 space-y-5 max-w-3xl mx-auto w-full">
                     
-                    <!-- 標題區 (含 AI 下標按鈕) -->
                     <div class="space-y-4">
                         <div>
                             <div class="flex justify-between items-end mb-1">
                                 <label class="block text-sm font-bold text-gray-700">文章標題</label>
                                 <button id="aiTitleBtn" onclick="generateTitleWithAI()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 transition bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100">
-                                    <i class="fas fa-magic"></i> ✨ AI 自動下標
+                                    <i class="fas fa-magic"></i> AI 自動下標
                                 </button>
                             </div>
                             <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="輸入內容後，點擊上方按鈕自動生成標題...">
@@ -165,7 +180,7 @@
                         <div id="previewContent" class="preview-box">
                             <span class="text-gray-300 text-center block mt-10">
                                 內容預覽將顯示於此...<br>
-                                AI 生成的 <strong>紅色粗體重點</strong> 會直接在這裡顯示
+                                AI 生成的 <span class="red-bold">紅色粗體重點</span> 會直接在這裡顯示
                             </span>
                         </div>
                     </div>
@@ -181,10 +196,10 @@
         import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==========================================
-        //  🟢 正確的 Firebase 設定 (...PmKE)
+        //  🟢 修正：使用您截圖中正確的 Firebase Key (...PmKE)
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", // 正確的
+            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", // 正確的 Firebase Key
             authDomain: "littlesea-web.firebaseapp.com",
             projectId: "littlesea-web",
             storageBucket: "littlesea-web.firebasestorage.app",
@@ -240,7 +255,7 @@
             }
         }
 
-        // --- 🟢 暴力直連 AI (Raw Fetch) ---
+        // --- 🟢 暴力直連 AI (Raw Fetch) - 移除 SDK 依賴 ---
         async function fetchGeminiDirectly(model, prompt, apiKey) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             
@@ -277,8 +292,8 @@
             aiBtn.classList.add('ai-loading');
 
             try {
-                // 🟢 輪替策略：優先用最強的 2.0-flash-exp，失敗切 1.5-flash，再失敗切 gemini-pro (保底)
-                const modelsToTry = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-pro"];
+                // 🟢 策略：優先用 gemini-1.5-flash，失敗切 gemini-pro
+                const modelsToTry = ["gemini-1.5-flash", "gemini-pro"];
                 let generatedText = null;
                 let lastError = null;
 
@@ -287,25 +302,30 @@
 用戶選擇的分類是：【${selectedCategory}】。
 請將用戶提供的資料，依照對應框架重新撰寫。
 
-【🚫 格式規則】：
-1. 嚴格禁止使用 Markdown (#, *, -)。
-2. ⚠️ 盤中分析特效：請大量使用 HTML 標籤來強化視覺！
-   - 關鍵數字、漲跌幅、重點：請用 <b>重點內容</b> 包裹。
-   - 標題請用 <h3>標題</h3>
-3. 使用大量 Emoji (🔥, ✅, ⚠️, 🟢, 🔴)。
+【⚠️ 格式規則】：
+1. 請直接輸出 HTML 標籤 (不要用 Markdown 的 **粗體**)。
+2. 盤中分析特效：
+   - 關鍵數字、漲跌幅、重點：請用 <span class="red-bold">紅色粗體</span> 包裹。
+   - 族群名稱：請用 <span class="black-bold">黑色粗體</span> 包裹。
+3. 標題請用 <h3>標題</h3>
+4. 列表請用 <ul><li>...</li></ul>
 
 【📋 內容框架】：
 
 👉 如果是【盤中分析】：
-標題：【小海盤中觀察室】YYYY/MM/DD HH:MM
+標題格式：【小海盤中觀察室】YYYY/MM/DD HH:MM
 內容結構：
 <h3>🔥 即時戰情</h3>
-・大盤位階：(攻擊/盤整/修正)
-・盤中量能：<b>(預估量能與判斷)</b>
+<ul>
+  <li>大盤位階：(攻擊/盤整/修正)</li>
+  <li>盤中量能：<span class="red-bold">(預估量能與判斷)</span></li>
+</ul>
 
 <h3>⚡ 強弱勢族群</h3>
-・<b>強勢</b>：(列出族群，漲幅請用粗體)
-・<b>弱勢</b>：
+<ul>
+  <li><span class="black-bold">強勢</span>：(列出族群，漲幅請用紅色粗體)</li>
+  <li><span class="black-bold">弱勢</span>：</li>
+</ul>
 
 <h3>🎯 小海操作建議</h3>
 (明確指出：綁手/試單/加碼/減碼)
@@ -313,9 +333,11 @@
 👉 如果是【盤前/盤後/周末】：
 標題：【小海觀察室】YYYY/MM/DD
 <h3>🎯 核心戰略</h3>
-- 前日總結
-- <b>今日主軸</b> 🔥🔥🔥
-- <b>操作策略</b>：(依據早盤第一根五分K高低，突破積極，5T伸縮筆數跌破就減碼)
+<ul>
+  <li>前日總結</li>
+  <li><span class="red-bold">今日主軸</span> 🔥🔥🔥</li>
+  <li>操作策略：(依據早盤第一根五分K高低，突破積極，5T伸縮筆數跌破就減碼)</li>
+</ul>
 
 一、🌍 市場數據回顧
 二、📈 技術面分析
@@ -343,7 +365,7 @@
 
                 if (!generatedText) throw lastError;
 
-                // 清理多餘符號
+                // 清理
                 generatedText = generatedText.replace(/```html/g, '').replace(/```/g, '');
 
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
@@ -355,6 +377,7 @@
             } catch (error) {
                 console.error("AI Error:", error);
                 let msg = "AI 排版失敗。\n錯誤：" + error.message;
+                if (msg.includes("404")) msg += "\n\n請確認您的 Key 是否為 ...Z10c";
                 alert(msg);
             } finally {
                 aiBtn.disabled = false;
@@ -373,11 +396,10 @@
 
             const titleBtn = document.getElementById('aiTitleBtn');
             const originalText = titleBtn.innerHTML;
-            titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+            titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
             
             try {
                 const prompt = `請根據以下內容，生成一個吸睛的台股分析標題，格式如：【小海觀察室】YYYY/MM/DD 副標題。內容：${content.substring(0, 500)}`;
-                // 使用最快速的 flash 模型
                 let title = await fetchGeminiDirectly("gemini-1.5-flash", prompt, apiKey);
                 title = title.replace(/[\r\n]/g, '').trim();
                 document.getElementById('postTitle').value = title;
@@ -389,13 +411,38 @@
             }
         }
 
+        // 3. 連線測試按鈕
+        window.testAiConnection = async function() {
+             const apiKey = localStorage.getItem('gemini_api_key');
+             const resBox = document.getElementById('connectionResult');
+             resBox.innerText = "測試中...";
+             resBox.className = "ml-6 text-xs font-mono h-4 text-blue-500";
+             
+             if (!apiKey) { 
+                 alert("請先輸入 Key 並儲存！"); 
+                 resBox.innerText = "";
+                 return; 
+             }
+
+             try {
+                 await fetchGeminiDirectly("gemini-1.5-flash", "Hi", apiKey);
+                 alert("✅ 連線成功！這把鑰匙可以用！");
+                 resBox.innerText = "✅ 連線正常";
+                 resBox.className = "ml-6 text-xs font-mono h-4 text-green-600 font-bold";
+             } catch(e) {
+                 alert("❌ 連線失敗：\n" + e.message);
+                 resBox.innerText = "❌ 連線失敗";
+                 resBox.className = "ml-6 text-xs font-mono h-4 text-red-600 font-bold";
+             }
+        }
+
         // --- 預覽與 Key 管理 ---
         window.updatePreview = function() {
             const title = document.getElementById('postTitle').value;
             let content = document.getElementById('postContent').value;
             document.getElementById('previewTitle').innerText = title || "文章標題...";
             
-            // 直接渲染 HTML (盤中特效)
+            // 直接渲染 HTML
             if (content) {
                 if (!content.includes('<')) content = content.replace(/\n/g, '<br>');
                 document.getElementById('previewContent').innerHTML = content;
@@ -464,7 +511,7 @@
                 alert("發布失敗，請檢查網路連線。");
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> 確認發布文章';
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> 發布文章';
             }
         }
 
