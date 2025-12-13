@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | 最終整合版</title>
+    <title>小海控制台 | 發文系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- 引入 marked.js 用於預覽渲染 -->
+    
+    <!-- ❌ 移除所有 Google SDK，改用原生 Fetch，避免版本衝突 -->
+    
+    <!-- 引入 marked.js 用於預覽 (備用) -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
@@ -14,30 +17,46 @@
         .login-screen { display: flex; }
         .dashboard-screen { display: none; }
         
-        /* 載入動畫 */
-        @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
         .ai-loading {
-            background: linear-gradient(to right, #4f46e5 20%, #818cf8 40%, #818cf8 60%, #4f46e5 80%);
+            background: linear-gradient(to right, #ef4444 20%, #fca5a5 40%, #fca5a5 60%, #ef4444 80%);
             background-size: 200% auto;
             animation: shine 2s linear infinite;
             pointer-events: none;
         }
+        @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
 
-        /* 預覽區樣式 */
-        .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
-        .preview-box h1, .preview-box h2, .preview-box h3 { 
-            font-weight: 900; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; 
-            border-bottom: 3px solid #e2e8f0; padding-bottom: 0.3rem; 
+        /* 🟢 戰報預覽樣式 (盤中紅字特效核心) */
+        .preview-box { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            line-height: 1.8; 
+            color: #334155; 
+            font-size: 15px; 
         }
-        /* 紅色粗體特效 */
-        .preview-box strong, .preview-box b { 
-            color: #dc2626; 
+        /* 標題 */
+        .preview-box h3 { 
+            font-size: 1.2em;
             font-weight: 900; 
-            background-color: #fef2f2; 
-            padding: 0 4px; 
-            border-radius: 4px; 
+            color: #1e293b; 
+            margin-top: 1.2rem; 
+            margin-bottom: 0.5rem; 
+            border-bottom: 3px solid #e2e8f0; 
+            padding-bottom: 0.2rem; 
         }
-        .preview-box ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        /* 紅色強調 (AI 會生成這個 class) */
+        .red-highlight {
+            color: #dc2626;
+            font-weight: 900;
+            background-color: #fef2f2;
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+        /* 黑色強調 */
+        .bold-highlight {
+            font-weight: 900;
+            color: #000;
+        }
+        .preview-box ul { list-style-type: none; padding-left: 0; }
+        .preview-box li { margin-bottom: 0.5rem; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
@@ -50,7 +69,6 @@
                     <i class="fas fa-lock text-white text-2xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-800">管理員登入</h2>
-                <p class="text-gray-500 text-sm mt-2">v21.0 最終整合版</p>
             </div>
             <div class="space-y-4">
                 <input type="password" id="passwordInput" placeholder="請輸入密碼 (0712)" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg">
@@ -62,11 +80,11 @@
 
     <!-- 2. 發文後台 -->
     <div id="dashboardSection" class="h-full dashboard-screen flex-col">
-        <!-- 導航列 -->
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-green-600 px-2 py-1 rounded-full ml-1">v21.0</span></h1>
+                <!-- 🔴 版本號 v18.0 (請確認看到這個紅色標籤) -->
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-red-600 px-2 py-1 rounded-full ml-1 shadow-sm">v18.0 直連版</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
@@ -94,17 +112,17 @@
             </div>
         </div>
 
-        <!-- 主內容區 (三欄分割: 列表 | 編輯 | 預覽) -->
+        <!-- 主內容區 -->
         <main class="flex-1 flex overflow-hidden flex-col md:flex-row">
             
-            <!-- 左側：文章列表 (管理刪除) -->
+            <!-- 左側：文章管理列表 -->
             <div class="w-full md:w-64 bg-slate-50 border-r border-gray-200 flex flex-col hidden md:flex">
                 <div class="p-3 border-b border-gray-200 font-bold text-gray-600 text-sm flex justify-between items-center">
-                    <span><i class="fas fa-list mr-1"></i> 文章列表</span>
+                    <span><i class="fas fa-list mr-1"></i> 已發布文章</span>
                     <span id="postCount" class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">0</span>
                 </div>
                 <div id="postListContainer" class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <div class="text-center text-gray-400 text-xs mt-10">連線中...</div>
+                    <div class="text-center text-gray-400 text-xs mt-10">載入中...</div>
                 </div>
             </div>
 
@@ -116,7 +134,6 @@
                         <div>
                             <div class="flex justify-between items-end mb-1">
                                 <label class="block text-sm font-bold text-gray-700">文章標題</label>
-                                <!-- AI 自動下標 -->
                                 <button id="aiTitleBtn" onclick="generateTitleWithAI()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 transition bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100">
                                     <i class="fas fa-magic"></i> ✨ AI 自動下標
                                 </button>
@@ -164,7 +181,7 @@
                         <div id="previewContent" class="preview-box">
                             <span class="text-gray-300 text-center block mt-10">
                                 內容預覽將顯示於此...<br>
-                                AI 生成的 <strong>紅色粗體重點</strong> 會直接在這裡顯示
+                                AI 生成的 <span class="red-highlight">紅色粗體重點</span> 會直接在這裡顯示
                             </span>
                         </div>
                     </div>
@@ -180,11 +197,10 @@
         import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==========================================
-        //  🟢 修正：這是您之前貼給我最正確的 Firebase 設定 (...PmKE)
-        //  這能確保登入功能 100% 正常
+        //  🟢 Firebase Config (使用 ...PmKE)
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", // 正確的
+            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", // 您之前提供的正確 Firebase Key
             authDomain: "littlesea-web.firebaseapp.com",
             projectId: "littlesea-web",
             storageBucket: "littlesea-web.firebasestorage.app",
@@ -203,7 +219,7 @@
             loadPosts(); 
         }).catch((error) => {
             console.error("Firebase Login Error:", error);
-            // 這裡不再阻擋，讓使用者至少能看到畫面
+            // 這裡不阻擋
         });
 
         // --- 文章列表與刪除 ---
@@ -244,7 +260,7 @@
         }
 
         // --- 🟢 暴力直連 AI (Raw Fetch) ---
-        // 這是解決 404 問題的關鍵：直接呼叫 HTTP API，不透過 SDK
+        // 完全不使用 SDK，直接發送 HTTP 請求，解決所有版本不合問題
         async function fetchGeminiDirectly(model, prompt, apiKey) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             
@@ -263,7 +279,7 @@
             return data.candidates[0].content.parts[0].text;
         }
 
-        // 1. AI 智能排版 (多模型輪替)
+        // 1. AI 智能排版
         window.rewriteWithAI = async function() {
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { alert("請先設定 AI Key！"); toggleApiKeyInput(); return; }
@@ -293,10 +309,10 @@
 
 【🚫 格式規則】：
 1. 嚴格禁止使用 Markdown (#, *, -)。
-2. 請直接使用 HTML 標籤。
+2. 請直接輸出 HTML 標籤。
 3. ⚠️ 盤中分析特效：
-   - 關鍵數字、漲跌幅、重點：請用 <b style="color:#dc2626;background-color:#fef2f2;padding:0 4px;border-radius:4px;">紅色粗體</b> 包裹。
-   - 族群名稱：請用 <b>黑色粗體</b> 包裹。
+   - 關鍵數字、漲跌幅、重點：請用 <span class="red-highlight">紅色粗體</span> 包裹。
+   - 族群名稱：請用 <span class="bold-highlight">黑色粗體</span> 包裹。
 4. 標題請用 <h3>標題</h3>
 5. 列表請用 <ul><li>...</li></ul>
 
@@ -308,13 +324,13 @@
 <h3>🔥 即時戰情</h3>
 <ul>
   <li>大盤位階：(攻擊/盤整/修正)</li>
-  <li>盤中量能：<b style="color:#dc2626;">(預估量能與判斷)</b></li>
+  <li>盤中量能：<span class="red-highlight">(預估量能與判斷)</span></li>
 </ul>
 
 <h3>⚡ 強弱勢族群</h3>
 <ul>
-  <li><b>強勢</b>：(列出族群，漲幅請用紅色粗體)</li>
-  <li><b>弱勢</b>：</li>
+  <li><span class="bold-highlight">強勢</span>：(列出族群，漲幅請用紅色粗體)</li>
+  <li><span class="bold-highlight">弱勢</span>：</li>
 </ul>
 
 <h3>🎯 小海操作建議</h3>
@@ -324,7 +340,7 @@
 標題：【小海觀察室】YYYY/MM/DD
 <h3>🎯 核心戰略</h3>
 - 前日總結
-- <b style="color:#dc2626;">今日主軸</b> 🔥🔥🔥
+- <span class="red-highlight">今日主軸</span> 🔥🔥🔥
 - <b>操作策略</b>：(依據早盤第一根五分K高低，突破積極，5T伸縮筆數跌破就減碼)
 
 一、🌍 市場數據回顧
@@ -384,11 +400,10 @@
 
             const titleBtn = document.getElementById('aiTitleBtn');
             const originalText = titleBtn.innerHTML;
-            titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+            titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
             
             try {
                 const prompt = `請根據以下內容，生成一個吸睛的台股分析標題，格式如：【小海觀察室】YYYY/MM/DD 副標題。內容：${content.substring(0, 500)}`;
-                // 使用最快速的 flash 模型
                 let title = await fetchGeminiDirectly("gemini-1.5-flash", prompt, apiKey);
                 title = title.replace(/[\r\n]/g, '').trim();
                 document.getElementById('postTitle').value = title;
