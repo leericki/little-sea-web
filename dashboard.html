@@ -6,44 +6,15 @@
     <title>小海控制台 | 發文系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- 引入 marked.js 用於預覽渲染 Markdown -->
+    
+    <!-- 🟢 移除 Google AI SDK，改用原生 Fetch 直連 -->
+    <!-- 引入 marked.js 用於預覽 (備用) -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
         .login-screen { display: flex; }
         .dashboard-screen { display: none; }
-        
-        /* 預覽區專屬樣式 (讓盤中字體顯示出來) */
-        .preview-content { 
-            font-family: 'Noto Sans TC', sans-serif; 
-            line-height: 1.8; 
-            color: #334155; 
-            font-size: 15px;
-        }
-        /* 針對 Markdown 的標題做樣式 */
-        .preview-content h1, .preview-content h2, .preview-content h3 { 
-            font-weight: 800; 
-            color: #1e293b; 
-            margin-top: 1.2rem; 
-            margin-bottom: 0.6rem; 
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 0.2rem;
-        }
-        /* 重點強調樣式 (紅色粗體) */
-        .preview-content strong { 
-            color: #dc2626; 
-            font-weight: 900; 
-            background-color: #fef2f2; 
-            padding: 0 4px; 
-            border-radius: 4px; 
-        }
-        .preview-content ul { 
-            list-style-type: disc; 
-            padding-left: 1.5rem; 
-            margin-bottom: 1rem;
-        }
-        .preview-content li { margin-bottom: 0.25rem; }
         
         /* 載入動畫 */
         @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
@@ -52,6 +23,31 @@
             background-size: 200% auto;
             animation: shine 2s linear infinite;
             pointer-events: none;
+        }
+
+        /* 🟢 戰報預覽樣式 (讓盤中字體顯示出來) */
+        .preview-box {
+            font-family: 'Noto Sans TC', sans-serif;
+            line-height: 1.8;
+            color: #334155;
+            font-size: 15px;
+        }
+        /* 標題樣式 */
+        .preview-box h1, .preview-box h2, .preview-box h3 {
+            font-weight: 800;
+            color: #1e293b;
+            margin-top: 1.2rem;
+            margin-bottom: 0.6rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.2rem;
+        }
+        /* 重點強調樣式 (紅色粗體) */
+        .preview-box b, .preview-box strong {
+            color: #dc2626; /* 紅色 */
+            font-weight: 900;
+            background-color: #fef2f2;
+            padding: 0 4px;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -79,7 +75,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-red-600 px-2 py-1 rounded-full ml-1 shadow-sm">v15.0 直連版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v12.0 直連版</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
@@ -140,7 +136,6 @@
                                 <i class="fas fa-magic"></i> AI 智能排版
                             </button>
                         </div>
-                        <!-- 高度加高，方便編輯 -->
                         <textarea id="postContent" rows="15" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y font-mono text-sm leading-relaxed bg-gray-50" placeholder="請輸入市場數據或簡單筆記..." oninput="updatePreview()"></textarea>
                     </div>
 
@@ -159,11 +154,11 @@
                 <div class="flex-1 overflow-y-auto p-6">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-lg mx-auto min-h-[500px]">
                         <h2 id="previewTitle" class="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-gray-100 pb-4">文章標題...</h2>
-                        <!-- 這裡是重點：預覽內容 -->
-                        <div id="previewContent" class="preview-content">
+                        <!-- 預覽內容容器 -->
+                        <div id="previewContent" class="preview-box">
                             <span class="text-gray-300 text-center block mt-10">
                                 內容預覽將顯示於此...<br>
-                                AI 生成的 **重點** 會自動變 <strong class="bg-red-50 text-red-600 px-1 rounded">紅色粗體</strong>
+                                AI 生成的 <b class="text-red-600 bg-red-50">重點</b> 會自動變紅色粗體
                             </span>
                         </div>
                     </div>
@@ -179,10 +174,10 @@
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==========================================
-        //  您的正確 Firebase 設定 (...PmKE)
+        //  🟢 修正：使用您提供的正確 Firebase Key (...PmKE)
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", // 正確的
+            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE", 
             authDomain: "littlesea-web.firebaseapp.com",
             projectId: "littlesea-web",
             storageBucket: "littlesea-web.firebasestorage.app",
@@ -197,18 +192,19 @@
 
         signInAnonymously(auth).then(() => console.log("Firebase Connected")).catch(console.error);
 
-        // --- 預覽功能 (將 Markdown **粗體** 轉為 HTML 紅色粗體) ---
+        // --- 預覽功能 (支援 HTML 渲染) ---
         window.updatePreview = function() {
             const title = document.getElementById('postTitle').value;
             let content = document.getElementById('postContent').value;
-            
             document.getElementById('previewTitle').innerText = title || "文章標題...";
             
+            // 將內容中的換行轉為 <br> 以便預覽
             if (content) {
-                // 使用 marked.js 渲染基本 Markdown
-                let htmlContent = marked.parse(content);
-                // 額外魔法：將 <strong> (即 Markdown 的 **) 轉為紅色粗體樣式
-                document.getElementById('previewContent').innerHTML = htmlContent;
+                // 如果是 AI 生成的 HTML，直接渲染；如果是手打文字，簡單處理換行
+                if (!content.includes('<')) {
+                    content = content.replace(/\n/g, '<br>');
+                }
+                document.getElementById('previewContent').innerHTML = content;
             } else {
                 document.getElementById('previewContent').innerHTML = '<span class="text-gray-300 text-center block mt-10">內容預覽...</span>';
             }
@@ -222,13 +218,13 @@
                 const last4 = key.slice(-4);
                 if (last4 === 'Z10c') {
                     display.innerHTML = `<span class="text-green-600 font-bold">● Key 正確 (...${last4})</span>`;
-                    display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-green-50 border border-green-200";
+                    display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-green-100 border border-green-200";
                 } else {
                     display.innerHTML = `<span class="text-red-600 font-bold">● Key 錯誤 (...${last4})</span>`;
                     display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-red-100 border border-red-200";
                 }
             } else {
-                display.innerHTML = `● 未設定 AI Key`;
+                display.innerHTML = `● 未設定 Key`;
                 document.getElementById('apiKeySection').classList.remove('hidden');
             }
         }
@@ -257,8 +253,8 @@
 
         checkKeyStatus();
 
-        // --- 🟢 AI 核心邏輯 (v15.0 直連版 - 不使用 SDK) ---
-        // 這能解決 404 Not Found 的問題，因為我們直接呼叫 REST API
+        // --- 🟢 暴力直連 AI (解決 404 問題的核心) ---
+        // 直接使用 Fetch 呼叫 Google REST API，不透過 SDK
         async function fetchGeminiDirectly(model, prompt, apiKey) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             
@@ -304,6 +300,7 @@
 
             try {
                 // 🟢 策略：優先使用 gemini-1.5-flash，失敗則切換 gemini-pro
+                // 這樣可以確保一定有一個能用
                 const modelsToTry = ["gemini-1.5-flash", "gemini-pro"];
                 let generatedText = null;
                 let lastError = null;
@@ -313,34 +310,36 @@
 用戶選擇的分類是：【${selectedCategory}】。
 請將用戶提供的資料，依照對應框架重新撰寫。
 
-【🚫 格式規則】：
-1. 嚴格禁止使用 Markdown Header (# 標題)，請改用粗體 **標題** 區分。
-2. ⚠️ 盤中分析特效：請使用 Markdown 的 **粗體** (兩個星號) 來標示重點、數字、漲跌幅。
-   (範例：**台積電** 上漲 **2%**，請務必加粗！)
-3. 使用大量 Emoji (🔥, ✅, ⚠️, 🟢, 🔴)。
+【⚠️ 格式規則 - 非常重要】：
+1. 請直接輸出 HTML 格式 (不要用 Markdown 的 **粗體**)。
+2. 重點、數字、漲跌幅：請用 <b>重點內容</b> 包裹。
+3. 紅色強調 (如上漲、關鍵字)：請用 <b style="color:#dc2626;">紅色重點</b> 包裹。
+4. 綠色強調 (如下跌)：請用 <b style="color:#16a34a;">綠色重點</b> 包裹。
+5. 標題請用 <h3>標題</h3>。
+6. 使用大量 Emoji (🔥, ✅, ⚠️, 🟢, 🔴)。
 
 【📋 內容框架】：
 
 👉 如果是【盤中分析】：
-標題格式：【小海盤中觀察室】YYYY/MM/DD HH:MM
+標題：【小海盤中觀察室】YYYY/MM/DD HH:MM
 內容結構：
-### 🔥 即時戰情
-- **大盤位階**：(攻擊/盤整/修正)
-- **盤中量能**：(預估量能與判斷)
+<h3>🔥 即時戰情</h3>
+・大盤位階：(攻擊/盤整/修正)
+・盤中量能：(預估量能與判斷，請用紅色粗體)
 
-### ⚡ 強弱勢族群
-- **強勢**：(列出族群，漲幅請用 **粗體** 標示)
-- **弱勢**：
+<h3>⚡ 強弱勢族群</h3>
+・<b>強勢</b>：(列出族群，漲幅請用紅色粗體)
+・<b>弱勢</b>：
 
-### 🎯 小海操作建議
+<h3>🎯 小海操作建議</h3>
 (明確指出：綁手/試單/加碼/減碼)
 
 👉 如果是【盤前/盤後/周末】：
 標題：【小海觀察室】YYYY/MM/DD
-### 🎯 核心戰略
+<h3>🎯 核心戰略</h3>
 - 前日總結
-- **今日主軸** 🔥🔥🔥
-- **操作策略**：(依據早盤第一根五分K高低，突破積極，5T伸縮筆數跌破就減碼)
+- <b style="color:red;">今日主軸</b> 🔥🔥🔥
+- <b>操作策略</b>：(依據早盤第一根五分K高低，突破積極，5T伸縮筆數跌破就減碼)
 
 一、🌍 市場數據回顧
 二、📈 技術面分析
@@ -371,8 +370,8 @@ ${originalText}
 
                 if (!generatedText) throw lastError;
 
-                // 清理多餘符號 (如 ```markdown)
-                generatedText = generatedText.replace(/```markdown/g, '').replace(/```/g, '');
+                // 清理多餘符號 (如 ```html)
+                generatedText = generatedText.replace(/```html/g, '').replace(/```/g, '');
 
                 // 自動填入標題
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
