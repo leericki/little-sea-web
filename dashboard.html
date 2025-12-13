@@ -251,7 +251,7 @@
             return data.candidates[0].content.parts[0].text;
         }
 
-        // 1. AI 智能排版 (多模型輪替)
+        // 1. AI 智能排版 (多模型輪替 - 修復版)
         window.rewriteWithAI = async function() {
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { alert("請先設定 AI Key！"); toggleApiKeyInput(); return; }
@@ -269,8 +269,11 @@
             aiBtn.classList.add('ai-loading');
 
             try {
-                // 🟢 輪替策略：優先用 gemini-1.5-flash，失敗切 gemini-pro
-                const modelsToTry = ["gemini-1.5-flash", "gemini-pro"];
+                // 🟢 修正點：使用目前穩定支援的模型名稱
+                // gemini-1.5-flash: 快速、便宜 (首選)
+                // gemini-1.5-pro: 邏輯強、穩定 (備援)
+                const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+                
                 let generatedText = null;
                 let lastError = null;
 
@@ -332,7 +335,8 @@
                     try {
                         console.log(`Trying model: ${model}`);
                         generatedText = await fetchGeminiDirectly(model, prompt, apiKey);
-                        break; 
+                        // 如果成功拿到資料，就跳出迴圈
+                        if (generatedText) break; 
                     } catch (e) {
                         console.warn(`Model ${model} failed:`, e);
                         lastError = e;
@@ -341,7 +345,7 @@
 
                 if (!generatedText) throw lastError;
 
-                // 清理多餘符號
+                // 清理多餘符號 (有些 AI 還是會習慣加 ```html)
                 generatedText = generatedText.replace(/```html/g, '').replace(/```/g, '');
 
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
@@ -353,7 +357,9 @@
             } catch (error) {
                 console.error("AI Error:", error);
                 let msg = "AI 排版失敗。\n錯誤：" + error.message;
-                if (msg.includes("404")) msg += "\n\n請確認您的 Key 是否為 ...Z10c";
+                // 針對常見錯誤給出提示
+                if (msg.includes("404")) msg += "\n\n原因：找不到模型，請確認程式碼中的模型名稱是否正確 (gemini-1.5-flash)。";
+                if (msg.includes("429")) msg += "\n\n原因：請求太頻繁，請稍等幾秒再試。";
                 alert(msg);
             } finally {
                 aiBtn.disabled = false;
@@ -361,6 +367,7 @@
                 aiBtn.classList.remove('ai-loading');
             }
         }
+🔍 額外檢查與建議
 
         // 2. ✨ AI 自動下標
         window.generateTitleWithAI = async function() {
