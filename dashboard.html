@@ -287,7 +287,7 @@
 
         // --- 🟢 Google API 核心：使用內建新 Key ---
         async function fetchGeminiDirectly(model, prompt) {
-            // 🔒 這是你已經成功啟用的新 Key
+            // 🔒 這是你已經成功啟用的新 Key (已鎖定)
             const apiKey = "AlzaSyCDmExPpvZnSRwWrSRfsqaxvYzghKgE0Y";
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -363,7 +363,7 @@
 
             } catch (error) {
                 console.error("AI Error:", error);
-                alert(`Google AI 連線失敗。\n請稍等幾分鐘後重試 (API 正在生效中)。\n錯誤訊息：${error.message}`);
+                alert(`Google AI 連線失敗。\n錯誤訊息：${error.message}\n(請稍等幾分鐘讓 API 生效)`);
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalBtnText;
