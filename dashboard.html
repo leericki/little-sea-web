@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v23.0 特訓區擴充版</title>
+    <title>小海控制台 | v23.0 特訓擴充版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -286,7 +286,7 @@
             }
         }
 
-        // --- 🟢 AI 核心：精簡與修復 ---
+        // --- 🟢 AI 核心：極簡化模型清單 ---
         async function fetchGeminiDirectly(model, prompt, apiKey) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
@@ -322,12 +322,11 @@
             aiBtn.classList.add('ai-loading');
 
             try {
-                // 🟢 修正：移除 gemini-pro，避免觸發找不到模型的錯誤
-                // 只保留目前 Google 支援度最高的 Flash 系列
+                // 🟢 修正重點：只保留最穩定的 Flash 模型
+                // 移除 Pro 版，避免因為權限或版本問題導致報錯
                 const modelsToTry = [
-                    "gemini-1.5-flash",          // 優先：標準版
-                    "gemini-1.5-flash-latest",   // 備用：最新版
-                    "gemini-1.5-flash-001"       // 備用：穩定版
+                    "gemini-1.5-flash",          // 首選
+                    "gemini-1.5-flash-8b"        // 備用
                 ];
 
                 let generatedText = null;
@@ -367,8 +366,7 @@
 
             } catch (error) {
                 console.error("AI Error:", error);
-                // 顯示更清楚的錯誤
-                alert(`AI 生成失敗。\n1. 請確認 Key 是否正確 (結尾 Z10c)\n2. 可能是免費額度已滿，請稍後再試。\n錯誤訊息：${error.message}`);
+                alert(`AI 生成失敗。\n1. 請確認 API Key 是否正確。\n2. 可能是免費額度已滿。\n錯誤訊息：${error.message}`);
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalBtnText;
