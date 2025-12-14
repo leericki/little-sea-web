@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v26.0 Perplexity 轉型版</title>
+    <title>小海控制台 | v26.1 Perplexity 修正版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -87,7 +87,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-sky-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1 shadow-sm">v26.0 Perplexity版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1 shadow-sm">v26.1 新模型版</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
@@ -288,6 +288,7 @@
 
         // --- 🟢 Perplexity API 核心 ---
         async function fetchPerplexity(prompt, apiKey) {
+            // Perplexity 的 API 端點
             const url = 'https://api.perplexity.ai/chat/completions';
             const options = {
                 method: 'POST',
@@ -296,8 +297,8 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    // 使用 Perplexity 的強大模型
-                    model: 'llama-3.1-sonar-large-128k-online', 
+                    // 🟢 關鍵修正：使用最新的 sonar-pro 模型 (取代舊的 llama-3.1...)
+                    model: 'sonar-pro', 
                     messages: [
                         { role: 'system', content: 'You are a helpful financial assistant. Please provide analysis in Traditional Chinese (Taiwan).' },
                         { role: 'user', content: prompt }
@@ -396,9 +397,6 @@
                 if (start === 'pplx') {
                     display.innerHTML = `<span class="text-sky-600 font-bold">● Perplexity Key</span>`;
                     display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-sky-100 border border-sky-200";
-                } else if (start === 'Alza') {
-                     // 這是舊的 Google Key，提示用戶更換
-                     display.innerHTML = `<span class="text-red-500">● 舊 Google Key</span>`;
                 } else {
                     display.innerHTML = `<span class="text-gray-500">● 未知 Key</span>`;
                 }
