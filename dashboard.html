@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v29.0 Perplexity 轉型版</title>
+    <title>小海控制台 | v29.1 視覺優化版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -18,14 +18,19 @@
         }
         @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
         
-        /* 預覽區樣式 */
+        /* --- 預覽區樣式優化 --- */
         .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
         .preview-box h3 { 
             font-size: 1.25rem; font-weight: 900; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.8rem; 
             border-left: 5px solid #0ea5e9; padding-left: 0.5rem;
         }
+        /* 🔵 重點標示改為深藍色，閱讀更舒適 */
         .preview-box strong, .preview-box b { 
-            color: #dc2626; background-color: #fee2e2; padding: 0 4px; border-radius: 4px; font-weight: 900;
+            color: #0369a1; /* 深天藍色 */
+            background-color: #f0f9ff; /* 極淺藍底 */
+            padding: 0 4px; 
+            border-radius: 4px; 
+            font-weight: 700;
         }
         .preview-box ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
         .preview-box li { margin-bottom: 0.5rem; }
@@ -67,7 +72,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-sky-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1">v29.0 Perplexity (海納版)</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1">v29.1 舒適版</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500">Key 檢查中...</div>
@@ -191,14 +196,13 @@
             if (confirm("⚠️ 確定刪除？")) await deleteDoc(doc(db, "posts", id));
         }
 
-        // --- 🟢 Perplexity API 核心 (Sonar-Pro) ---
         async function fetchPerplexity(prompt, apiKey) {
             const url = 'https://api.perplexity.ai/chat/completions';
             const options = {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: 'sonar-pro', // 🟢 使用最新模型名稱
+                    model: 'sonar-pro',
                     messages: [
                         { role: 'system', content: 'You are a helpful financial assistant. Use Markdown. Bold key points.' },
                         { role: 'user', content: prompt }
@@ -215,7 +219,6 @@
             return data.choices[0].message.content;
         }
 
-        // --- 核心修改：海納 (Haina) 總編輯模式 ---
         window.rewriteWithAI = async function() {
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { alert("請設定 Perplexity Key！"); window.toggleApiKeyInput(); return; }
@@ -230,7 +233,6 @@
             aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 總編輯海納審稿中...';
 
             try {
-                // 🟢 Haina (海納) 專屬 Prompt 結構
                 const prompt = `
 你現在是「小海財經」的總編輯「海納 (Haina)」。
 你的任務是將前線傳回來的碎散情報（新聞、籌碼、技術、策略），嚴格填入【小海盤前／盤後觀察室】的標準框架中。
@@ -322,10 +324,8 @@ ${content}`;
 
                 let generatedText = await fetchPerplexity(prompt, apiKey);
                 
-                // 清理 Markdown 標記
                 generatedText = generatedText.replace(/```markdown/g, '').replace(/```/g, '');
                 
-                // 自動抓取標題填入標題欄
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
                 if (titleMatch) {
                     document.getElementById('postTitle').value = titleMatch[0].trim();
