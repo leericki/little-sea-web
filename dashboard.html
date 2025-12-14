@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v22.2 診斷修復版</title>
+    <title>小海控制台 | v22.3 穩定架構版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
-        .login-screen { display: flex; }
-        .dashboard-screen { display: none; }
         .ai-loading {
             background: linear-gradient(to right, #4f46e5 20%, #818cf8 40%, #818cf8 60%, #4f46e5 80%);
             background-size: 200% auto;
@@ -27,10 +25,49 @@
         .preview-box b, .preview-box strong { color: #dc2626; font-weight: 900; background-color: #fef2f2; padding: 0 4px; border-radius: 4px; }
         .preview-box ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
     </style>
+
+    <script>
+        // 設定管理員密碼
+        const ADMIN_PASSWORD = "0712"; 
+
+        function checkLogin() {
+            const input = document.getElementById('passwordInput');
+            const loginSection = document.getElementById('loginSection');
+            const dashboardSection = document.getElementById('dashboardSection');
+
+            if (input.value === ADMIN_PASSWORD) {
+                // 切換顯示狀態
+                loginSection.classList.add('hidden');     // 隱藏登入頁
+                dashboardSection.classList.remove('hidden'); // 顯示後台
+                dashboardSection.classList.add('flex');      // 加上 flex 排版
+                
+                // 記住登入狀態
+                localStorage.setItem('littlesea_admin', 'true');
+            } else {
+                alert("❌ 密碼錯誤！");
+                input.value = ""; // 清空密碼欄位
+                input.focus();
+            }
+        }
+
+        function logout() { 
+            localStorage.removeItem('littlesea_admin'); 
+            location.reload(); 
+        }
+
+        // 頁面載入時自動檢查是否已登入
+        window.onload = function() {
+            if (localStorage.getItem('littlesea_admin') === 'true') {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('dashboardSection').classList.add('flex');
+            }
+        }
+    </script>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <div id="loginSection" class="min-h-screen flex items-center justify-center login-screen px-4 absolute inset-0 z-50 bg-gray-100">
+    <div id="loginSection" class="min-h-screen flex items-center justify-center absolute inset-0 z-50 bg-gray-100">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -39,18 +76,20 @@
                 <h2 class="text-2xl font-bold text-gray-800">管理員登入</h2>
             </div>
             <div class="space-y-4">
-                <input type="password" id="passwordInput" placeholder="請輸入密碼 (0712)" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg">
+                <input type="password" id="passwordInput" placeholder="請輸入密碼 (0712)" 
+                       class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg"
+                       onkeydown="if(event.key === 'Enter') checkLogin()">
                 <button onclick="checkLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition transform active:scale-95">驗證身分</button>
                 <div class="text-center"><a href="index.html" class="text-sm text-gray-400 hover:text-gray-600">回首頁</a></div>
             </div>
         </div>
     </div>
 
-    <div id="dashboardSection" class="h-full dashboard-screen flex-col">
+    <div id="dashboardSection" class="h-full hidden flex-col">
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-green-600 px-2 py-1 rounded-full ml-1 shadow-sm">v22.2 Flash版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-green-600 px-2 py-1 rounded-full ml-1 shadow-sm">v22.3</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
@@ -159,6 +198,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
             authDomain: "littlesea-web.firebaseapp.com",
@@ -169,25 +209,21 @@
             measurementId: "G-W8GSXYYY9L"
         };
 
-        // 偵錯日誌 helper
         function updateStatus(msg, isError = false) {
             const el = document.getElementById('loadingText');
             if(el) {
                 el.innerHTML = isError ? `<span class="text-red-500 font-bold">${msg}</span>` : msg;
                 if(isError) document.querySelector('#loadingStatus i').className = "fas fa-exclamation-triangle text-2xl text-red-500 mb-2";
             }
-            console.log(`[System]: ${msg}`);
         }
 
         let app, auth, db;
-
         try {
             updateStatus("初始化 Firebase...");
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
             
-            updateStatus("正在登入資料庫...");
             signInAnonymously(auth)
                 .then(() => {
                     updateStatus("登入成功，讀取文章中...");
@@ -195,7 +231,7 @@
                 })
                 .catch((error) => {
                     console.error("Firebase Login Error:", error);
-                    updateStatus(`登入失敗: ${error.code}<br><span class="text-xs">請檢查網路或 API 限制</span>`, true);
+                    updateStatus(`登入失敗: ${error.code}`, true);
                 });
 
         } catch (e) {
@@ -238,10 +274,7 @@
                     });
                 }, (error) => {
                     console.error("Snapshot Error:", error);
-                    let errMsg = "讀取權限不足";
-                    if (error.code === 'permission-denied') errMsg = "資料庫權限不足 (Rules)";
-                    if (error.code === 'unavailable') errMsg = "網路無法連線到 Firestore";
-                    updateStatus(`讀取失敗: ${errMsg}`, true);
+                    updateStatus(`讀取失敗: ${error.code}`, true);
                 });
             } catch(e) {
                 updateStatus(`列表錯誤: ${e.message}`, true);
@@ -254,9 +287,9 @@
             }
         }
 
-        // --- 🟢 純淨版 Gemini API 呼叫 ---
+        // --- AI 呼叫 ---
         async function fetchGeminiDirectly(model, prompt, apiKey) {
-            // 注意：強制使用 v1beta 和 flash 模型
+            // 強制使用 v1beta 和 gemini-1.5-flash
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
                 method: "POST",
@@ -289,8 +322,7 @@
             aiBtn.classList.add('ai-loading');
 
             try {
-                // 🟢 最終解決方案：只使用 gemini-1.5-flash
-                // 它最便宜、最快、且支援度最高，不會有 Pro 的權限問題
+                // 強制使用 1.5-flash
                 const model = "gemini-1.5-flash"; 
                 
                 const prompt = `
@@ -316,7 +348,7 @@
 
             } catch (error) {
                 console.error("AI Error:", error);
-                alert(`AI 生成失敗：${error.message}\n\n建議：請檢查 API Key 是否正確，或稍後再試。`);
+                alert(`AI 生成失敗：${error.message}`);
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalBtnText;
@@ -329,11 +361,9 @@
             const content = document.getElementById('postContent').value;
             if (!apiKey) { alert("請先設定 AI Key！"); return; }
             if (!content) { alert("請先輸入文章內容！"); return; }
-
             const titleBtn = document.getElementById('aiTitleBtn');
             const originalText = titleBtn.innerHTML;
             titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            
             try {
                 const prompt = `請生成一個台股分析標題，格式：【小海觀察室】YYYY/MM/DD 副標題。內容：${content.substring(0, 500)}`;
                 let title = await fetchGeminiDirectly("gemini-1.5-flash", prompt, apiKey);
@@ -350,7 +380,6 @@
             if (content) document.getElementById('previewContent').innerHTML = content.replace(/\n/g, '<br>');
         }
 
-        // Key 管理與 UI 相關
         function checkKeyStatus() {
             const key = localStorage.getItem('gemini_api_key');
             const display = document.getElementById('keyStatusDisplay');
@@ -391,22 +420,6 @@
         }
 
         checkKeyStatus(); 
-    </script>
-
-    <script>
-        const ADMIN_PASSWORD = "0712"; 
-        function checkLogin() {
-            if (document.getElementById('passwordInput').value === ADMIN_PASSWORD) {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('dashboardSection').style.display = 'flex';
-                localStorage.setItem('littlesea_admin', 'true');
-            } else { alert("密碼錯誤！"); }
-        }
-        function logout() { localStorage.removeItem('littlesea_admin'); location.reload(); }
-        if (localStorage.getItem('littlesea_admin') === 'true') {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('dashboardSection').style.display = 'flex';
-        }
     </script>
 </body>
 </html>
