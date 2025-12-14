@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v26.2 完美排版版</title>
+    <title>小海控制台 | v27.0 Google 回歸版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -11,14 +11,14 @@
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
         .ai-loading {
-            background: linear-gradient(to right, #0ea5e9 20%, #38bdf8 40%, #38bdf8 60%, #0ea5e9 80%);
+            background: linear-gradient(to right, #4f46e5 20%, #818cf8 40%, #818cf8 60%, #4f46e5 80%);
             background-size: 200% auto;
             animation: shine 2s linear infinite;
             pointer-events: none;
         }
         @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
         
-        /* 預覽區樣式 - 這裡控制了顏色的魔法 */
+        /* 預覽區樣式 */
         .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
         
         /* 標題樣式 */
@@ -83,16 +83,16 @@
     <div id="loginSection" class="min-h-screen flex items-center justify-center absolute inset-0 z-50 bg-gray-100">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-sky-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-lock text-white text-2xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-800">管理員登入</h2>
             </div>
             <div class="space-y-4">
                 <input type="password" id="passwordInput" placeholder="請輸入密碼 (0712)" 
-                       class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-sky-500 outline-none text-center text-lg"
+                       class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg"
                        onkeydown="if(event.key === 'Enter') checkLogin()">
-                <button onclick="checkLogin()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg transition transform active:scale-95">驗證身分</button>
+                <button onclick="checkLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition transform active:scale-95">驗證身分</button>
             </div>
         </div>
     </div>
@@ -100,33 +100,18 @@
     <div id="dashboardSection" class="h-full hidden flex-col">
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
-                <i class="fas fa-pen-nib text-sky-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1 shadow-sm">v26.2 完美排版版</span></h1>
+                <i class="fas fa-pen-nib text-blue-600"></i>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v27.0 Google版</span></h1>
             </div>
             <div class="flex items-center gap-3">
-                <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
-                <button onclick="toggleApiKeyInput()" class="text-gray-600 hover:text-sky-600 text-sm font-medium bg-gray-100 px-3 py-2 rounded-lg transition">
-                    <i class="fas fa-robot mr-1"></i> AI 設定
-                </button>
+                <div class="hidden md:block text-xs font-mono bg-green-100 px-2 py-1 rounded text-green-700 border border-green-200">
+                    <i class="fas fa-check-circle"></i> Key 已就緒 (...KgE0Y)
+                </div>
                 <button onclick="logout()" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium transition">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </nav>
-
-        <div id="apiKeySection" class="hidden bg-sky-50 border-b border-sky-100 p-4 shadow-inner shrink-0">
-            <div class="max-w-4xl mx-auto flex flex-col gap-3">
-                <div class="flex gap-2 items-center">
-                    <i class="fas fa-key text-sky-500"></i>
-                    <input type="password" id="geminiApiKey" placeholder="請貼上 Perplexity Key (pplx-xxxxxxxx...)" class="flex-1 px-3 py-2 rounded border border-sky-200 text-sm focus:outline-none focus:border-sky-500">
-                    <button onclick="saveApiKey()" class="bg-sky-600 text-white px-4 py-2 rounded text-sm hover:bg-sky-700 shadow-sm">儲存</button>
-                </div>
-                <div class="flex justify-between items-center text-xs text-sky-600 ml-6">
-                    <span class="font-bold">💡 本版本專用：Perplexity API (請勿使用 Google Key)</span>
-                    <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold bg-white px-2 py-1 rounded border border-red-200">🗑️ 清除 Key</button>
-                </div>
-            </div>
-        </div>
 
         <main class="flex-1 flex overflow-hidden flex-col md:flex-row">
             
@@ -150,11 +135,11 @@
                         <div>
                             <div class="flex justify-between items-end mb-1">
                                 <label class="block text-sm font-bold text-gray-700">文章標題</label>
-                                <button id="aiTitleBtn" onclick="generateTitleWithAI()" class="text-sky-600 hover:text-sky-800 text-xs font-bold flex items-center gap-1 transition bg-sky-50 px-2 py-1 rounded border border-sky-100 hover:bg-sky-100">
-                                    <i class="fas fa-brain"></i> ✨ AI 自動下標
+                                <button id="aiTitleBtn" onclick="generateTitleWithAI()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 transition bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100">
+                                    <i class="fas fa-magic"></i> ✨ AI 自動下標
                                 </button>
                             </div>
-                            <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-sky-500 outline-none transition" placeholder="輸入內容後，可點擊上方按鈕自動生成標題...">
+                            <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="輸入內容後，可點擊上方按鈕自動生成標題...">
                         </div>
 
                         <div>
@@ -173,11 +158,11 @@
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-end">
                             <label class="block text-sm font-bold text-gray-700">內容編輯 <span class="text-xs font-normal text-gray-400">(輸入筆記，AI 幫你整理成戰報)</span></label>
-                            <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-1">
-                                <i class="fas fa-microchip"></i> AI 智能排版 (Perplexity)
+                            <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-1">
+                                <i class="fas fa-wand-magic-sparkles"></i> AI 智能排版 (Gemini)
                             </button>
                         </div>
-                        <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-sky-500 outline-none resize-y font-mono text-sm leading-relaxed bg-gray-50" placeholder="請輸入市場數據或簡單筆記..." oninput="updatePreview()"></textarea>
+                        <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y font-mono text-sm leading-relaxed bg-gray-50" placeholder="請輸入市場數據或簡單筆記..." oninput="updatePreview()"></textarea>
                     </div>
 
                     <button id="submitBtn" onclick="submitPost()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-[0.98] flex items-center justify-center gap-2">
@@ -270,7 +255,7 @@
                         const post = docSnap.data();
                         const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleDateString() : '剛剛';
                         const item = document.createElement('div');
-                        item.className = 'bg-white p-3 rounded shadow-sm border border-gray-100 hover:border-sky-200 transition text-sm group cursor-pointer';
+                        item.className = 'bg-white p-3 rounded shadow-sm border border-gray-100 hover:border-blue-200 transition text-sm group cursor-pointer';
                         item.innerHTML = `
                             <div class="flex justify-between items-start mb-1">
                                 <span class="font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</span>
@@ -300,40 +285,28 @@
             }
         }
 
-        // --- 🟢 Perplexity API 核心 ---
-        async function fetchPerplexity(prompt, apiKey) {
-            const url = 'https://api.perplexity.ai/chat/completions';
-            const options = {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    // 🟢 使用最新的 sonar-pro 模型
-                    model: 'sonar-pro', 
-                    messages: [
-                        { role: 'system', content: 'You are a helpful financial assistant. Please provide analysis in Traditional Chinese (Taiwan).' },
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0.2
-                })
-            };
+        // --- 🟢 Google API 核心：使用內建新 Key ---
+        async function fetchGeminiDirectly(model, prompt) {
+            // 🔒 這是你已經成功啟用的新 Key
+            const apiKey = "AlzaSyCDmExPpvZnSRwWrSRfsqaxvYzghKgE0Y";
 
-            const response = await fetch(url, options);
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+                throw new Error(errorData.error.message || `HTTP ${response.status}`);
             }
 
             const data = await response.json();
-            return data.choices[0].message.content;
+            return data.candidates[0].content.parts[0].text;
         }
 
         window.rewriteWithAI = async function() {
-            const apiKey = localStorage.getItem('gemini_api_key');
-            if (!apiKey) { alert("請先設定 Perplexity API Key！"); window.toggleApiKeyInput(); return; }
-
             const contentArea = document.getElementById('postContent');
             const originalText = contentArea.value;
             const categoryEl = document.querySelector('input[name="category"]:checked');
@@ -344,11 +317,14 @@
             const aiBtn = document.getElementById('aiRewriteBtn');
             const originalBtnText = aiBtn.innerHTML;
             aiBtn.disabled = true;
-            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Perplexity 思考中...';
+            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gemini 思考中...';
             aiBtn.classList.add('ai-loading');
 
             try {
-                // 🟢 這裡的 prompt 已改為要求 Markdown 格式
+                // 🟢 使用穩定的 Gemini Flash 模型
+                const model = "gemini-1.5-flash"; 
+
+                // 🟢 提示詞優化：使用 Markdown
                 const prompt = `
 你是一位專業操盤手「小海」。
 用戶選擇的分類是：【${selectedCategory}】。
@@ -374,7 +350,7 @@
 【🗣️ 語氣】：專業、冷靜、戰鬥風格。
 用戶草稿：${originalText}`;
 
-                let generatedText = await fetchPerplexity(prompt, apiKey);
+                let generatedText = await fetchGeminiDirectly(model, prompt);
 
                 // 移除不必要的 Markdown 標記
                 generatedText = generatedText.replace(/```markdown/g, '').replace(/```/g, '');
@@ -387,7 +363,7 @@
 
             } catch (error) {
                 console.error("AI Error:", error);
-                alert(`Perplexity 連線失敗。\n1. 請確認 Key 是 pplx- 開頭。\n2. 檢查餘額。\n錯誤訊息：${error.message}`);
+                alert(`Google AI 連線失敗。\n請稍等幾分鐘後重試 (API 正在生效中)。\n錯誤訊息：${error.message}`);
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalBtnText;
@@ -396,16 +372,14 @@
         }
 
         window.generateTitleWithAI = async function() {
-            const apiKey = localStorage.getItem('gemini_api_key');
             const content = document.getElementById('postContent').value;
-            if (!apiKey) { alert("請先設定 API Key！"); return; }
             if (!content) { alert("請先輸入文章內容！"); return; }
             const titleBtn = document.getElementById('aiTitleBtn');
             const originalText = titleBtn.innerHTML;
             titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             try {
                 const prompt = `請生成一個台股分析標題，格式：【小海觀察室】YYYY/MM/DD 副標題。內容：${content.substring(0, 500)}`;
-                let title = await fetchPerplexity(prompt, apiKey);
+                let title = await fetchGeminiDirectly("gemini-1.5-flash", prompt);
                 // 移除可能的 markdown 符號
                 title = title.replace(/[\r\n#*]/g, '').trim();
                 document.getElementById('postTitle').value = title;
@@ -427,29 +401,6 @@
             }
         }
 
-        function checkKeyStatus() {
-            const key = localStorage.getItem('gemini_api_key');
-            const display = document.getElementById('keyStatusDisplay');
-            if (key) {
-                const start = key.slice(0, 4);
-                if (start === 'pplx') {
-                    display.innerHTML = `<span class="text-sky-600 font-bold">● Perplexity Key</span>`;
-                    display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-sky-100 border border-sky-200";
-                } else {
-                    display.innerHTML = `<span class="text-gray-500">● 未知 Key</span>`;
-                }
-            } else {
-                display.innerHTML = `● 未設定 Key`;
-                document.getElementById('apiKeySection').classList.remove('hidden');
-            }
-        }
-        window.toggleApiKeyInput = () => document.getElementById('apiKeySection').classList.toggle('hidden');
-        window.saveApiKey = () => {
-            const key = document.getElementById('geminiApiKey').value.trim();
-            if(key) { localStorage.setItem('gemini_api_key', key); alert('已儲存'); location.reload(); }
-        }
-        window.clearApiKey = () => { localStorage.removeItem('gemini_api_key'); location.reload(); }
-
         window.submitPost = async function() {
             const title = document.getElementById('postTitle').value;
             const content = document.getElementById('postContent').value;
@@ -469,8 +420,6 @@
             } catch (e) { alert("發布失敗: " + e.message); } 
             finally { btn.disabled = false; }
         }
-
-        checkKeyStatus(); 
     </script>
 </body>
 </html>
