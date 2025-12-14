@@ -67,7 +67,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-sky-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1">v29.0 Perplexity</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1">v29.0 Perplexity (海納版)</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500">Key 檢查中...</div>
@@ -120,7 +120,7 @@
                         <div class="flex justify-between items-end">
                             <label class="block text-sm font-bold text-gray-700">內容編輯</label>
                             <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow-md transition transform active:scale-95">
-                                <i class="fas fa-microchip"></i> AI 智能排版 (Perplexity)
+                                <i class="fas fa-microchip"></i> 呼叫總編輯海納排版
                             </button>
                         </div>
                         <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 font-mono text-sm leading-relaxed" placeholder="請輸入筆記..." oninput="updatePreview()"></textarea>
@@ -215,6 +215,7 @@
             return data.choices[0].message.content;
         }
 
+        // --- 核心修改：海納 (Haina) 總編輯模式 ---
         window.rewriteWithAI = async function() {
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { alert("請設定 Perplexity Key！"); window.toggleApiKeyInput(); return; }
@@ -226,45 +227,115 @@
             const aiBtn = document.getElementById('aiRewriteBtn');
             const originalText = aiBtn.innerHTML;
             aiBtn.disabled = true;
-            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 總編輯海納審稿中...';
 
             try {
+                // 🟢 Haina (海納) 專屬 Prompt 結構
                 const prompt = `
-你是一位專業操盤手「小海」。分類：【${category}】。
-請將資料重新撰寫。
+你現在是「小海財經」的總編輯「海納 (Haina)」。
+你的任務是將前線傳回來的碎散情報（新聞、籌碼、技術、策略），嚴格填入【小海盤前／盤後觀察室】的標準框架中。
 
-【✅ 格式】：
-1. 使用標準 Markdown。
-2. 重點用 **粗體** (系統會標紅)。
-3. 標題用 ###。
+## 核心規則
+1. **嚴格遵守框架**：必須完全按照下方的「輸出格式」撰寫，標題與結構不可更改。
+2. **語氣風格**：專業、客觀、條理分明，展現「小海」的分析高度。
+3. **排版要求**：使用標準 Markdown。重點數據、關鍵字請用 **粗體** 標示。
+4. **文章分類**：目前設定為【${category}】，請依此調整時態（如盤前展望或盤後回顧）。
 
-【📋 內容框架】：
-👉 【盤中分析】：
-### 🔥 即時戰情
-- 大盤位階：
-- 盤中量能：**(預估量能)**
+## 輸出格式 (請直接套用，保持標題符號一致)
 
-👉 【盤前/盤後/特訓】：
-### 🎯 核心戰略
-- 前日總結
-- **今日主軸** 🔥🔥🔥
-- **操作策略**
+【小海盤前／盤後觀察室】(請填入當日日期，如 2025/12/15)
+副標題：(根據內容生成一句吸睛的 10 字內總結)
 
-內容：${content}`;
+-----
+
+🎯 核心戰略
+- 昨日驚魂／盤後回顧：(簡述大盤走勢、法人動向、成交量)
+- 今日研判／盤前展望：(技術面、籌碼面、外部因素，給出方向)
+- 三大主軸：(列出當日最重要的三個觀察重點)
+- 觀盤三字訣：(用三個字或短詞濃縮策略，例：守、輪、選)
+
+-----
+
+一、🌍 市場數據回顧
+- 當日盤面摘要：(漲跌點數、成交量、法人買賣超)
+- 三大指數表現：(加權、期貨、櫃買，若無數據寫待更新)
+- 小海數據解讀：(用三點拆解原因與意義)
+
+-----
+
+二、📈 技術面分析
+- K線型態：(紅黑棒、吞噬、跳空等)
+- 均線位置：(5日、10日、20日狀態)
+- 支撐與壓力位：(整合數值)
+- 技術研判：(短線、中期趨勢判斷)
+
+-----
+
+三、💰 籌碼面解析
+- 法人動向：(外資、投信買賣超與動向)
+- 融資融券：(若有數據則分析，無則略過)
+- 小海解讀：(判斷籌碼面背後的邏輯，如土洋對作或合買)
+
+-----
+
+四、💥 產業／族群焦點
+- 當日強勢族群：(列出熱點)
+- 重災區族群：(列出弱勢股)
+- 個股案例：(列出代表股)
+- 操作建議：(逢低布局、回檔觀察或短線避開)
+
+-----
+
+五、💡 操作策略建議
+- 早盤策略（09:00-09:15）：(快衝/觀望邏輯)
+- 中盤策略（09:15-12:30）：(低接/防守邏輯)
+- 尾盤策略（12:30-13:30）：(隔日沖/留倉邏輯)
+- 資金配置：(給出積極型／穩健型／保守型比例建議)
+
+-----
+
+六、⚠️ 風險提示
+- 技術與籌碼風險：(假突破、均線失守等)
+- 操作紀律提醒：(如：不搶反彈、嚴守停損)
+
+-----
+
+七、📅 關鍵時間點
+- 當日關注：
+- 本週事件：
+
+-----
+
+八、💡 小海總結
+- 盤面回顧：(一句話濃縮昨日行情)
+- 今日三大關鍵：(列出三個最重要的觀察)
+- 投資優先順序：(族群排序，例：封測 > 廠務 > 金融)
+- 核心信念：(一句話提醒操作心態)
+
+-----
+
+📌 免責聲明：本報告僅供參考，投資有風險，入市需謹慎。
+📅 報告製作：小海觀察室
+
+## 原始輸入內容：
+${content}`;
 
                 let generatedText = await fetchPerplexity(prompt, apiKey);
                 
                 // 清理 Markdown 標記
                 generatedText = generatedText.replace(/```markdown/g, '').replace(/```/g, '');
                 
+                // 自動抓取標題填入標題欄
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
-                if (titleMatch) document.getElementById('postTitle').value = titleMatch[0].trim();
+                if (titleMatch) {
+                    document.getElementById('postTitle').value = titleMatch[0].trim();
+                }
 
                 document.getElementById('postContent').value = generatedText;
                 window.updatePreview();
 
             } catch (e) {
-                alert("Perplexity 失敗：" + e.message);
+                alert("Perplexity 生成失敗：" + e.message);
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalText;
