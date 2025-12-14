@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v26.1 Perplexity 修正版</title>
+    <title>小海控制台 | v26.2 完美排版版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -17,13 +17,27 @@
             pointer-events: none;
         }
         @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
+        
+        /* 預覽區樣式 - 這裡控制了顏色的魔法 */
         .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
-        .preview-box h1, .preview-box h2, .preview-box h3 { 
-            font-weight: 900; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; 
-            border-bottom: 3px solid #e2e8f0; padding-bottom: 0.3rem; 
+        
+        /* 標題樣式 */
+        .preview-box h3 { 
+            font-size: 1.25rem; font-weight: 900; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.8rem; 
+            border-left: 5px solid #2563eb; padding-left: 0.5rem;
         }
-        .preview-box b, .preview-box strong { color: #dc2626; font-weight: 900; background-color: #fef2f2; padding: 0 4px; border-radius: 4px; }
+        
+        /* 🟢 自動上色魔法：Markdown 的粗體 (strong) 會自動變成紅色背景 */
+        .preview-box strong, .preview-box b { 
+            color: #dc2626; /* 紅字 */
+            background-color: #fee2e2; /* 淡淡的紅底 */
+            padding: 0 4px; 
+            border-radius: 4px; 
+            font-weight: 900;
+        }
+        
         .preview-box ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .preview-box li { margin-bottom: 0.5rem; }
     </style>
 
     <script>
@@ -87,7 +101,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-sky-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1 shadow-sm">v26.1 新模型版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1 shadow-sm">v26.2 完美排版版</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
@@ -108,7 +122,7 @@
                     <button onclick="saveApiKey()" class="bg-sky-600 text-white px-4 py-2 rounded text-sm hover:bg-sky-700 shadow-sm">儲存</button>
                 </div>
                 <div class="flex justify-between items-center text-xs text-sky-600 ml-6">
-                    <span class="font-bold">💡 請使用 Perplexity Key (以 pplx- 開頭)</span>
+                    <span class="font-bold">💡 本版本專用：Perplexity API (請勿使用 Google Key)</span>
                     <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold bg-white px-2 py-1 rounded border border-red-200">🗑️ 清除 Key</button>
                 </div>
             </div>
@@ -288,7 +302,6 @@
 
         // --- 🟢 Perplexity API 核心 ---
         async function fetchPerplexity(prompt, apiKey) {
-            // Perplexity 的 API 端點
             const url = 'https://api.perplexity.ai/chat/completions';
             const options = {
                 method: 'POST',
@@ -297,7 +310,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    // 🟢 關鍵修正：使用最新的 sonar-pro 模型 (取代舊的 llama-3.1...)
+                    // 🟢 使用最新的 sonar-pro 模型
                     model: 'sonar-pro', 
                     messages: [
                         { role: 'system', content: 'You are a helpful financial assistant. Please provide analysis in Traditional Chinese (Taiwan).' },
@@ -335,20 +348,37 @@
             aiBtn.classList.add('ai-loading');
 
             try {
+                // 🟢 這裡的 prompt 已改為要求 Markdown 格式
                 const prompt = `
 你是一位專業操盤手「小海」。
 用戶選擇的分類是：【${selectedCategory}】。
 請將用戶提供的資料，依照對應框架重新撰寫。
-【🚫 格式規則】：禁止 Markdown，直接輸出 HTML。重點用 <b>紅色粗體</b>。
+
+【✅ 格式規則】：
+1. 請使用標準 **Markdown** 語法。
+2. 重點請使用 **粗體** (例如：**重點內容**)，系統會自動標紅。
+3. 標題請使用 ### 標題。
+
 【📋 內容框架】：
-👉 【盤中分析】：標題用 <h3>，包含 [即時戰情]、[強弱勢族群]、[操作建議]。
-👉 【盤前/盤後/特訓】：標題用 <h3>，包含 [核心戰略]、[數據回顧]、[技術分析]、[籌碼解析]。
-【🗣️ 語氣】：專業、冷靜。
+👉 【盤中分析】：
+### 🔥 即時戰情
+- 大盤位階：
+- 盤中量能：**(預估量能)**
+
+👉 【盤前/盤後/特訓】：
+### 🎯 核心戰略
+- 前日總結
+- **今日主軸** 🔥🔥🔥
+- **操作策略**
+
+【🗣️ 語氣】：專業、冷靜、戰鬥風格。
 用戶草稿：${originalText}`;
 
                 let generatedText = await fetchPerplexity(prompt, apiKey);
 
-                generatedText = generatedText.replace(/```html/g, '').replace(/```/g, '');
+                // 移除不必要的 Markdown 標記
+                generatedText = generatedText.replace(/```markdown/g, '').replace(/```/g, '');
+                
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
                 if (titleMatch) document.getElementById('postTitle').value = titleMatch[0].trim();
 
@@ -376,7 +406,9 @@
             try {
                 const prompt = `請生成一個台股分析標題，格式：【小海觀察室】YYYY/MM/DD 副標題。內容：${content.substring(0, 500)}`;
                 let title = await fetchPerplexity(prompt, apiKey);
-                document.getElementById('postTitle').value = title.replace(/[\r\n]/g, '').trim();
+                // 移除可能的 markdown 符號
+                title = title.replace(/[\r\n#*]/g, '').trim();
+                document.getElementById('postTitle').value = title;
                 window.updatePreview();
             } catch (e) { alert("標題生成失敗: " + e.message); } 
             finally { titleBtn.innerHTML = originalText; }
@@ -386,7 +418,13 @@
             const title = document.getElementById('postTitle').value;
             let content = document.getElementById('postContent').value;
             document.getElementById('previewTitle').innerText = title || "文章標題...";
-            if (content) document.getElementById('previewContent').innerHTML = content.replace(/\n/g, '<br>');
+            
+            // 🟢 使用 marked.js 將 Markdown 轉為 HTML 顯示在右側
+            if (content) {
+                document.getElementById('previewContent').innerHTML = marked.parse(content);
+            } else {
+                document.getElementById('previewContent').innerHTML = '<span class="text-gray-300 text-center block mt-10">內容預覽...</span>';
+            }
         }
 
         function checkKeyStatus() {
