@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v23.1 最終完工版</title>
+    <title>小海控制台 | v24.0 新鑰匙核心版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -87,32 +87,17 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-blue-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v23.1</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-indigo-600 px-2 py-1 rounded-full ml-1 shadow-sm">v24.0 新鑰匙版</span></h1>
             </div>
             <div class="flex items-center gap-3">
-                <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">Key 檢查中...</div>
-                <button onclick="toggleApiKeyInput()" class="text-gray-600 hover:text-purple-600 text-sm font-medium bg-gray-100 px-3 py-2 rounded-lg transition">
-                    <i class="fas fa-robot mr-1"></i> AI 設定
-                </button>
+                <div class="hidden md:block text-xs font-mono bg-green-100 px-2 py-1 rounded text-green-700 border border-green-200">
+                    <i class="fas fa-check-circle"></i> Key 已內建 (...KgE0Y)
+                </div>
                 <button onclick="logout()" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium transition">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </nav>
-
-        <div id="apiKeySection" class="hidden bg-purple-50 border-b border-purple-100 p-4 shadow-inner shrink-0">
-            <div class="max-w-4xl mx-auto flex flex-col gap-3">
-                <div class="flex gap-2 items-center">
-                    <i class="fas fa-key text-purple-500"></i>
-                    <input type="password" id="geminiApiKey" placeholder="請貼上 SeaAi 專案的新 Key (...Z10c)" class="flex-1 px-3 py-2 rounded border border-purple-200 text-sm focus:outline-none focus:border-purple-500">
-                    <button onclick="saveApiKey()" class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 shadow-sm">儲存</button>
-                </div>
-                <div class="flex justify-between items-center text-xs text-purple-600 ml-6">
-                    <span class="font-bold">💡 建議重新申請一組新的 Key (Google AI Studio)</span>
-                    <button onclick="clearApiKey()" class="text-red-500 hover:text-red-700 underline font-bold bg-white px-2 py-1 rounded border border-red-200">🗑️ 強制清除舊 Key</button>
-                </div>
-            </div>
-        </div>
 
         <main class="flex-1 flex overflow-hidden flex-col md:flex-row">
             
@@ -160,7 +145,7 @@
                         <div class="flex justify-between items-end">
                             <label class="block text-sm font-bold text-gray-700">內容編輯 <span class="text-xs font-normal text-gray-400">(輸入筆記，AI 幫你整理成戰報)</span></label>
                             <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-1">
-                                <i class="fas fa-wand-magic-sparkles"></i> AI 智能排版
+                                <i class="fas fa-wand-magic-sparkles"></i> AI 智能排版 (Seaweb)
                             </button>
                         </div>
                         <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none resize-y font-mono text-sm leading-relaxed bg-gray-50" placeholder="請輸入市場數據或簡單筆記..." oninput="updatePreview()"></textarea>
@@ -286,8 +271,11 @@
             }
         }
 
-        // --- 🟢 AI 核心：單一鎖定，精確診斷 ---
-        async function fetchGeminiDirectly(model, prompt, apiKey) {
+        // --- 🟢 3. AI 核心：使用你最新的 Key ---
+        async function fetchGeminiDirectly(model, prompt) {
+            // 🔒 這是你截圖中的新 Key
+            const apiKey = "AlzaSyCDmExPpvZnSRwWrSRfsqaxvYzghKgE0Y";
+
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
                 method: "POST",
@@ -297,7 +285,6 @@
 
             if (!response.ok) {
                 const errorData = await response.json();
-                // 這裡會把 Google 傳回來的具體錯誤拋出去
                 throw new Error(errorData.error.message || `HTTP ${response.status}`);
             }
 
@@ -306,9 +293,6 @@
         }
 
         window.rewriteWithAI = async function() {
-            const apiKey = localStorage.getItem('gemini_api_key');
-            if (!apiKey) { alert("請先設定 AI Key！"); window.toggleApiKeyInput(); return; }
-
             const contentArea = document.getElementById('postContent');
             const originalText = contentArea.value;
             const categoryEl = document.querySelector('input[name="category"]:checked');
@@ -319,14 +303,12 @@
             const aiBtn = document.getElementById('aiRewriteBtn');
             const originalBtnText = aiBtn.innerHTML;
             aiBtn.disabled = true;
-            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 新鑰匙連線中...';
             aiBtn.classList.add('ai-loading');
 
             try {
-                // 🟢 強制鎖定：gemini-1.5-flash
-                // 原因：這是最穩定、最基礎的模型。如果這個都報 "Not Found"，絕對是 Key 本身權限的問題。
-                // 我們不再嘗試其他模型，以免誤導錯誤方向。
-                const model = "gemini-1.5-flash";
+                // 🟢 鎖定使用最穩定的 Flash 模型
+                const model = "gemini-1.5-flash"; 
 
                 const prompt = `
 你是一位專業操盤手「小海」。
@@ -339,8 +321,7 @@
 【🗣️ 語氣】：專業、冷靜。
 用戶草稿：${originalText}`;
 
-                console.log(`Requesting AI model: ${model}`);
-                let generatedText = await fetchGeminiDirectly(model, prompt, apiKey);
+                let generatedText = await fetchGeminiDirectly(model, prompt);
 
                 generatedText = generatedText.replace(/```html/g, '').replace(/```/g, '');
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
@@ -351,14 +332,7 @@
 
             } catch (error) {
                 console.error("AI Error:", error);
-                
-                let errorMsg = `AI 連線失敗 (${error.message})`;
-                // 針對 "Not Found" 給出精確建議
-                if (error.message.includes("not found") || error.message.includes("404")) {
-                    errorMsg = "❌ AI 權限錯誤 (404 Not Found)\n\n原因：你的 Key 無法存取 gemini-1.5-flash 模型。\n\n解決方法：\n1. 你的 Key 可能過期或專案未啟用 Generative AI API。\n2. 建議直接去 Google AI Studio 申請一支【全新】的 Key。";
-                }
-
-                alert(errorMsg);
+                alert(`AI 生成失敗。\n1. 雖然已使用新 Key，但 Google 雲端專案 (Seaweb) 可能尚未啟用 "Generative Language API"。\n2. 請到 Google Cloud Console 啟用 API。\n錯誤訊息：${error.message}`);
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalBtnText;
@@ -367,19 +341,17 @@
         }
 
         window.generateTitleWithAI = async function() {
-            const apiKey = localStorage.getItem('gemini_api_key');
             const content = document.getElementById('postContent').value;
-            if (!apiKey) { alert("請先設定 AI Key！"); return; }
             if (!content) { alert("請先輸入文章內容！"); return; }
             const titleBtn = document.getElementById('aiTitleBtn');
             const originalText = titleBtn.innerHTML;
             titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             try {
                 const prompt = `請生成一個台股分析標題，格式：【小海觀察室】YYYY/MM/DD 副標題。內容：${content.substring(0, 500)}`;
-                let title = await fetchGeminiDirectly("gemini-1.5-flash", prompt, apiKey);
+                let title = await fetchGeminiDirectly("gemini-1.5-flash", prompt);
                 document.getElementById('postTitle').value = title.replace(/[\r\n]/g, '').trim();
                 window.updatePreview();
-            } catch (e) { alert("標題生成失敗，請檢查 Key"); } 
+            } catch (e) { alert("標題生成失敗: " + e.message); } 
             finally { titleBtn.innerHTML = originalText; }
         }
 
@@ -389,25 +361,6 @@
             document.getElementById('previewTitle').innerText = title || "文章標題...";
             if (content) document.getElementById('previewContent').innerHTML = content.replace(/\n/g, '<br>');
         }
-
-        function checkKeyStatus() {
-            const key = localStorage.getItem('gemini_api_key');
-            const display = document.getElementById('keyStatusDisplay');
-            if (key) {
-                const last4 = key.slice(-4);
-                display.innerHTML = `<span class="text-green-600 font-bold">● Key (...${last4})</span>`;
-                display.className = "hidden md:block text-xs font-mono px-2 py-1 rounded bg-green-100 border border-green-200";
-            } else {
-                display.innerHTML = `● 未設定 Key`;
-                document.getElementById('apiKeySection').classList.remove('hidden');
-            }
-        }
-        window.toggleApiKeyInput = () => document.getElementById('apiKeySection').classList.toggle('hidden');
-        window.saveApiKey = () => {
-            const key = document.getElementById('geminiApiKey').value.trim();
-            if(key) { localStorage.setItem('gemini_api_key', key); alert('已儲存'); location.reload(); }
-        }
-        window.clearApiKey = () => { localStorage.removeItem('gemini_api_key'); location.reload(); }
 
         window.submitPost = async function() {
             const title = document.getElementById('postTitle').value;
@@ -428,8 +381,6 @@
             } catch (e) { alert("發布失敗: " + e.message); } 
             finally { btn.disabled = false; }
         }
-
-        checkKeyStatus(); 
     </script>
 </body>
 </html>
