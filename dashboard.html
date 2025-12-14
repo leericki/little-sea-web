@@ -398,3 +398,15 @@
         function checkLogin() {
             if (document.getElementById('passwordInput').value === ADMIN_PASSWORD) {
                 document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('dashboardSection').style.display = 'flex';
+                localStorage.setItem('littlesea_admin', 'true');
+            } else { alert("密碼錯誤！"); }
+        }
+        function logout() { localStorage.removeItem('littlesea_admin'); location.reload(); }
+        if (localStorage.getItem('littlesea_admin') === 'true') {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
