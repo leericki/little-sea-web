@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v29.1 純淨文字版</title>
+    <title>小海控制台 | v30.0 艦隊完全體</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -18,15 +18,11 @@
         }
         @keyframes shine { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
         
-        /* 預覽區樣式 - 移除針對 strong 的特殊樣式，因為現在是純文字 */
+        /* 預覽區樣式 - 純文字版優化 */
         .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; white-space: pre-wrap; }
         .preview-box h3 { 
             font-size: 1.25rem; font-weight: 900; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.8rem; 
             border-left: 5px solid #0ea5e9; padding-left: 0.5rem;
-        }
-        /* 雖然移除了 ** 但保留樣式以防萬一 */
-        .preview-box strong, .preview-box b { 
-            color: #dc2626; background-color: #fee2e2; padding: 0 4px; border-radius: 4px; font-weight: 900;
         }
     </style>
 
@@ -66,7 +62,7 @@
         <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-2">
                 <i class="fas fa-pen-nib text-sky-600"></i>
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1">v29.1 純淨文字版</span></h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full ml-1">v30.0 艦隊完全體</span></h1>
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500">Key 檢查中...</div>
@@ -119,7 +115,7 @@
                         <div class="flex justify-between items-end">
                             <label class="block text-sm font-bold text-gray-700">內容編輯</label>
                             <button id="aiRewriteBtn" onclick="rewriteWithAI()" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow-md transition transform active:scale-95">
-                                <i class="fas fa-microchip"></i> 呼叫總編輯海納 (純文字版)
+                                <i class="fas fa-microchip"></i> 呼叫小海艦隊排版
                             </button>
                         </div>
                         <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 font-mono text-sm leading-relaxed" placeholder="請輸入筆記..." oninput="updatePreview()"></textarea>
@@ -198,7 +194,6 @@
                 body: JSON.stringify({
                     model: 'sonar-pro', 
                     messages: [
-                        // 🟢 這裡再次強調 Do not use bold syntax
                         { role: 'system', content: 'You are a helpful financial assistant. Do NOT use markdown bold syntax (**text**). Output plain text only.' },
                         { role: 'user', content: prompt }
                     ],
@@ -214,35 +209,102 @@
             return data.choices[0].message.content;
         }
 
-        // --- 核心修改：海納 (Haina) 總編輯 (無粗體版) ---
+        // --- 核心修改：海納 + 特訓教官 (雙角色/純文字/自動時間) ---
         window.rewriteWithAI = async function() {
             const apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) { alert("請設定 Perplexity Key！"); window.toggleApiKeyInput(); return; }
             
             const content = document.getElementById('postContent').value;
-            const category = document.querySelector('input[name="category"]:checked').value;
+            const categoryEl = document.querySelector('input[name="category"]:checked');
+            const category = categoryEl ? categoryEl.value : "盤前分析";
+            
             if (!content) { alert("請輸入內容！"); return; }
+
+            // ⏰ 時間判斷 (13點為分界)
+            const currentHour = new Date().getHours();
+            const timePeriod = currentHour < 13 ? "盤前" : "盤後";
 
             const aiBtn = document.getElementById('aiRewriteBtn');
             const originalText = aiBtn.innerHTML;
             aiBtn.disabled = true;
-            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 總編輯海納審稿中...';
 
-            try {
-                // 🟢 Haina (海納) Prompt - 強調禁用 **
-                const prompt = `
-你現在是「小海財經」的總編輯「海納 (Haina)」。
-你的任務是將前線傳回來的碎散情報，嚴格填入【小海盤前／盤後觀察室】的標準框架中。
+            let prompt = "";
+            let roleName = "";
+
+            if (category === "特訓區") {
+                // ==========================
+                // 🧭 角色 A：特訓教官 (嚮導版 - 溫和堅定)
+                // ==========================
+                roleName = "特訓教官";
+                aiBtn.innerHTML = `<i class="fas fa-chalkboard-teacher"></i> 特訓教官正在備課...`;
+                
+                prompt = `
+你現在是「小海艦隊」的**「特訓教官 (Training Instructor)」**。
+使用者選擇了【特訓區】分類，你的任務是將輸入的內容整理成一篇**深入淺出的教學文章**。
 
 ## 核心規則
-1. **嚴格遵守框架**：必須完全按照下方的「輸出格式」撰寫，標題與結構不可更改。
-2. **語氣風格**：專業、客觀、條理分明。
-3. **排版要求**：請使用 **純文字**。嚴格禁止使用粗體符號 (如 ** 或 __)，重點請直接文字敘述即可。
-4. **文章分類**：目前設定為【${category}】，請依此調整時態。
+1. **語氣風格**：像一位經驗豐富的**老船長**或**登山嚮導**。堅定、沉穩、苦口婆心。
+2. **溝通方式**：不要謾罵，而是用「提醒」、「建議」、「引導」的方式糾正錯誤觀念。多用「試著思考」、「我們觀察到」、「切記」等詞彙。
+3. **排版要求**：請使用 **純文字**。嚴格禁止使用粗體符號 (**)，重點直接寫出來即可。
 
-## 輸出格式 (請直接套用)
+## 輸出格式 (特訓班專用)
 
-【小海盤前／盤後觀察室】(請填入當日日期)
+【小海特訓班】(自訂一個有深度的教學標題)
+導言：(用一段話帶出今天的主題，像是與學員對話)
+
+-----
+
+🧭 一、觀念導航：(今日教學核心觀念)
+- 市場現象：(描述大家常遇到的狀況)
+- 核心邏輯：(教官解析背後的原理)
+
+-----
+
+🔍 二、實戰案例解析
+- 案例標的：(若有股票代號填入，無則寫通用案例)
+- 技術型態：(如：W底、乖離過大)
+- 進場時機：(教官建議的安全買點)
+- 風險防守：(教官建議的停損位置)
+
+-----
+
+🧠 三、贏家心法筆記
+- 常見迷思：(點出一般人容易犯的錯)
+- 修正思維：(老手是如何思考的)
+
+-----
+
+⚓ 四、教官的航海日誌
+- 重點總結：
+- 暖心叮嚀：(一句話鼓勵學員，如：投資是一場馬拉松，慢慢來比較快。)
+
+-----
+
+📌 聲明：本教學僅供學術研究，非投資建議。
+📅 課程製作：小海特訓班
+
+## 原始輸入內容：
+${content}`;
+
+            } else {
+                // ==========================
+                // ⚓ 角色 B：總編輯海納 (針對盤前/盤後/其他)
+                // ==========================
+                roleName = "總編輯海納";
+                aiBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 海納判定為${timePeriod}，審稿中...`;
+
+                prompt = `
+你現在是「小海財經」的總編輯「海納 (Haina)」。
+你的任務是將前線傳回來的情報，嚴格填入【小海${timePeriod}觀察室】的標準框架中。
+
+## 核心規則
+1. **嚴格遵守框架**：必須完全按照下方的「輸出格式」撰寫。
+2. **排版要求**：請使用 **純文字**。嚴格禁止使用粗體符號 (**)。
+3. **時態設定**：現在是${timePeriod}時段，請依此調整內容語氣。
+
+## 輸出格式 (海納標準版 - 無時間限制)
+
+【小海${timePeriod}觀察室】(請填入當日日期)
 副標題：(10字內總結)
 
 -----
@@ -286,10 +348,10 @@
 -----
 
 五、💡 操作策略建議
-- 早盤策略（09:00-09:15）：
-- 中盤策略（09:15-12:30）：
-- 尾盤策略（12:30-13:30）：
-- 資金配置：
+- 🔥 開盤戰術：(針對開盤氣氛的應對)
+- 🛡️ 盤中防守：(盤中震盪時的應對)
+- 🏁 尾盤佈局：(尾盤去留的判斷)
+- 資金配置：(給出資金比例建議)
 
 -----
 
@@ -318,15 +380,17 @@
 
 ## 原始輸入內容：
 ${content}`;
+            }
 
+            try {
                 let generatedText = await fetchPerplexity(prompt, apiKey);
                 
                 // 🟢 強力過濾：移除 Markdown 語法與粗體符號
                 generatedText = generatedText
                     .replace(/```markdown/g, '')
                     .replace(/```/g, '')
-                    .replace(/\*\*/g, '') // 移除 **
-                    .replace(/__/g, '');  // 移除 __
+                    .replace(/\*\*/g, '') 
+                    .replace(/__/g, '');
                 
                 const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
                 if (titleMatch) {
@@ -337,7 +401,7 @@ ${content}`;
                 window.updatePreview();
 
             } catch (e) {
-                alert("Perplexity 生成失敗：" + e.message);
+                alert(`${roleName} 生成失敗：` + e.message);
             } finally {
                 aiBtn.disabled = false;
                 aiBtn.innerHTML = originalText;
@@ -349,8 +413,8 @@ ${content}`;
             const content = document.getElementById('postContent').value;
             if(!apiKey || !content) return;
             try {
-                // 也禁止標題使用粗體
-                const prompt = `請生成一個台股分析標題，格式：【小海觀察室】YYYY/MM/DD 副標題。不要使用粗體符號。內容：${content.substring(0, 500)}`;
+                // 禁止標題粗體
+                const prompt = `請生成一個台股分析標題，格式：【小海觀察室】YYYY/MM/DD 副標題。不要使用粗體。內容：${content.substring(0, 500)}`;
                 let title = await fetchPerplexity(prompt, apiKey);
                 document.getElementById('postTitle').value = title.replace(/[\r\n#*]/g, '').trim();
                 window.updatePreview();
@@ -361,11 +425,7 @@ ${content}`;
             const title = document.getElementById('postTitle').value;
             let content = document.getElementById('postContent').value;
             document.getElementById('previewTitle').innerText = title || "文章標題...";
-            
-            // 🟢 預覽區不再使用 marked.parse，直接顯示純文字，確保所見即所得
-            if (content) {
-                document.getElementById('previewContent').textContent = content;
-            }
+            if (content) document.getElementById('previewContent').textContent = content;
         }
 
         function checkKeyStatus() {
