@@ -220,3 +220,113 @@
                     messages: [
                         { role: 'system', content: 'You are a helpful financial assistant. Use Markdown. Bold key points.' },
                         { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.2
+                })
+            };
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            return data.choices[0].message.content;
+        }
+
+        window.rewriteWithAI = async function() {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) { alert("請先點擊右上角「AI 設定」輸入 Perplexity Key！"); window.toggleApiKeyInput(); return; }
+            
+            const content = document.getElementById('postContent').value;
+            const category = document.querySelector('input[name="category"]:checked').value;
+            if (!content) { alert("請輸入內容！"); return; }
+
+            const aiBtn = document.getElementById('aiRewriteBtn');
+            const originalText = aiBtn.innerHTML;
+            aiBtn.disabled = true;
+            aiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 總編輯海納審稿中...';
+
+            try {
+                const prompt = `你現在是「小海財經」的總編輯... (請依照對應分類：${category} 進行排版)\n\n內容：${content}`;
+                let generatedText = await fetchPerplexity(prompt, apiKey);
+                generatedText = generatedText.replace(/```markdown/g, '').replace(/```/g, '');
+                
+                const titleMatch = generatedText.match(/【小海.*?】.*?\n/);
+                if (titleMatch) document.getElementById('postTitle').value = titleMatch[0].trim();
+
+                document.getElementById('postContent').value = generatedText;
+                window.updatePreview();
+            } catch (e) {
+                alert("AI 生成失敗：" + e.message);
+            } finally {
+                aiBtn.disabled = false;
+                aiBtn.innerHTML = originalText;
+            }
+        }
+
+        window.generateTitleWithAI = async function() {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            const content = document.getElementById('postContent').value;
+            if(!apiKey || !content) return;
+            try {
+                const prompt = `請生成一個台股分析標題，格式：【小海觀察室】YYYY/MM/DD 副標題。內容：${content.substring(0, 500)}`;
+                let title = await fetchPerplexity(prompt, apiKey);
+                document.getElementById('postTitle').value = title.replace(/[\r\n#*]/g, '').trim();
+                window.updatePreview();
+            } catch(e) {}
+        }
+
+        window.updatePreview = function() {
+            const title = document.getElementById('postTitle').value;
+            let content = document.getElementById('postContent').value;
+            document.getElementById('previewTitle').innerText = title || "文章標題...";
+            if (content && typeof marked !== 'undefined') {
+                document.getElementById('previewContent').innerHTML = marked.parse(content);
+            }
+        }
+
+        window.toggleApiKeyInput = () => document.getElementById('apiKeySection').classList.toggle('hidden');
+        window.saveApiKey = () => {
+            const key = document.getElementById('geminiApiKey').value.trim();
+            if(key) { localStorage.setItem('gemini_api_key', key); alert('已儲存'); location.reload(); }
+        }
+        
+        function checkKeyStatus() {
+            const key = localStorage.getItem('gemini_api_key');
+            const display = document.getElementById('keyStatusDisplay');
+            if (key && key.startsWith('pplx')) {
+                display.innerHTML = `<span class="text-sky-600 font-bold">● Perplexity OK</span>`;
+            } else {
+                display.innerHTML = `● 未設定 Key`;
+            }
+        }
+        
+        window.submitPost = async function() {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.querySelector('input[name="category"]:checked').value;
+            const btn = document.getElementById('submitBtn');
+
+            if (!title || !content) { alert("內容不能為空！"); return; }
+
+            try {
+                btn.disabled = true;
+                btn.innerText = "發布中...";
+                await addDoc(collection(db, "posts"), {
+                    title, content, category, author: "小海", timestamp: serverTimestamp()
+                });
+                alert("✅ 發布成功！");
+                location.reload(); 
+            } catch (e) { 
+                console.error(e);
+                alert("❌ 發布失敗: " + e.message); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerText = "確認發布文章";
+            }
+        }
+
+        checkKeyStatus();
+    </script>
+</body>
+</html>
