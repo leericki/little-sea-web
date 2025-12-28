@@ -11,25 +11,10 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #0f172a; color: white; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .hidden-content { display: none; }
-        .fade-in { animation: fadeIn 0.8s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        /* 時間軸線條 */
-        .timeline-line::before {
-            content: '';
-            position: absolute;
-            top: 2rem;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #ef4444 0%, #10b981 50%, #8b5cf6 100%);
-            z-index: 0;
-            opacity: 0.3;
-        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <!-- 導航列 -->
     <nav class="p-4 flex justify-between items-center border-b border-slate-800 bg-slate-900/80 fixed w-full z-50 backdrop-blur-md">
         <a href="index.html" class="flex items-center gap-2 hover:text-yellow-400 transition text-sm font-bold text-gray-300">
             <i data-lucide="arrow-left"></i> 返回官網
@@ -39,9 +24,8 @@
         </div>
     </nav>
 
-    <!-- 1. 登入鎖定畫面 -->
-    <section id="login-section" class="flex-1 flex flex-col items-center justify-center p-4 min-h-screen relative overflow-hidden">
-        <div class="glass-panel p-8 rounded-2xl max-w-md w-full text-center shadow-2xl relative z-10">
+    <section id="login-section" class="flex-1 flex flex-col items-center justify-center p-4 min-h-screen">
+        <div class="glass-panel p-8 rounded-2xl max-w-md w-full text-center shadow-2xl">
             <div class="w-16 h-16 bg-yellow-500/20 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i data-lucide="lock" class="w-8 h-8"></i>
             </div>
@@ -50,183 +34,112 @@
             
             <div class="space-y-4">
                 <input type="email" id="emailInput" placeholder="name@example.com" 
-                    class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition text-center placeholder-slate-500">
-                <button onclick="checkPermission()" 
-                    class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-slate-900 font-black py-3 rounded-lg transition shadow-lg transform active:scale-95">
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-center">
+                <button id="verifyBtn" class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-slate-900 font-black py-3 rounded-lg shadow-lg">
                     解鎖特訓內容
                 </button>
             </div>
             
             <div id="error-container" class="hidden mt-4 bg-red-900/30 p-3 rounded-lg border border-red-800/50">
-                <p class="text-red-400 text-xs mb-2">❌ 此信箱未在特訓名單中</p>
-                <a href="https://www.pressplay.cc/project/F563D1F022D0FAA8F9D81A02C05C8092/about?oid=2595E86847#act=auto-follow" target="_blank" class="text-yellow-400 text-xs font-bold underline hover:text-yellow-300">
-                    點此前往 PressPlay 訂閱取得資格 →
-                </a>
+                <p class="text-red-400 text-xs">❌ 此信箱未在特訓名單中</p>
             </div>
         </div>
     </section>
 
-    <!-- 2. 特訓內容區 -->
-    <section id="content-section" class="hidden-content pt-24 pb-16 px-4 max-w-7xl mx-auto w-full fade-in space-y-12">
-        
+    <section id="content-section" class="hidden-content pt-24 pb-16 px-4 max-w-4xl mx-auto w-full space-y-12">
         <div class="text-center">
             <span class="text-yellow-500 font-bold tracking-widest text-xs border border-yellow-500/30 px-3 py-1 rounded-full bg-yellow-500/10">VIP TRAINING</span>
-            <h1 class="text-3xl md:text-5xl font-black mt-4 mb-2">小海操盤術</h1>
-            <p class="text-slate-400 text-lg">全方位實戰體系規劃</p>
+            <h1 class="text-3xl font-black mt-4">學員專屬大盤趨勢</h1>
         </div>
 
-        <!-- 區塊 A：核心工具 (置頂) -->
-        <a href="tutorial.html" class="glass-panel p-8 rounded-2xl hover:bg-slate-800/80 transition group cursor-pointer border-l-8 border-yellow-500 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
-            <div class="absolute right-0 top-0 opacity-10 group-hover:opacity-20 transition">
-                <i data-lucide="crosshair" class="w-64 h-64 text-yellow-500 transform translate-x-1/4 -translate-y-1/4"></i>
-            </div>
-            <div class="w-20 h-20 bg-yellow-500 rounded-2xl flex items-center justify-center text-slate-900 shadow-lg shadow-yellow-500/20 shrink-0 group-hover:scale-110 transition">
-                <i data-lucide="play-circle" class="w-10 h-10"></i>
-            </div>
-            <div class="flex-1 text-center md:text-left z-10">
-                <span class="bg-yellow-500/20 text-yellow-400 text-xs font-bold px-2 py-1 rounded mb-2 inline-block">核心工具</span>
-                <h3 class="text-2xl font-bold text-white mb-2 group-hover:text-yellow-400 transition">五檔透視特訓</h3>
-                <p class="text-slate-400 text-sm">互動式操盤訓練。學習識別主力「防守單」與「假壓單」，訓練盤感反射神經。</p>
-            </div>
-            <div class="bg-yellow-500 text-slate-900 px-6 py-3 rounded-lg font-bold flex items-center gap-2 z-10 group-hover:bg-yellow-400 transition">
-                啟動模擬 <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </div>
-        </a>
-
-        <!-- 區塊 B：操盤三部曲 (時間軸) -->
-        <div>
-            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-200">
-                <i data-lucide="clock" class="text-blue-500"></i> 小海操盤三部曲
-            </h2>
-            
-            <div class="grid md:grid-cols-3 gap-6 relative timeline-line">
-                
-                <!-- 09:00 - 09:30 -->
-                <div class="glass-panel p-6 rounded-2xl border-t-4 border-red-500 relative z-10 hover:-translate-y-2 transition duration-300">
-                    <div class="bg-slate-900 w-fit p-3 rounded-xl mb-4 text-red-500 border border-red-500/30">
-                        <i data-lucide="zap" class="w-6 h-6"></i>
-                    </div>
-                    <div class="text-red-400 font-mono text-xs font-bold mb-1">09:00 - 09:30</div>
-                    <h3 class="text-xl font-bold mb-2">早盤快衝策略</h3>
-                    <p class="text-slate-400 text-sm mb-4">開盤定勝負。利用 5T 量能與第一根五分 K 高低點，抓出當日最強勢的突破機會。</p>
-                    <button class="text-slate-500 text-sm font-bold flex items-center gap-2 cursor-not-allowed border border-slate-700 rounded px-3 py-1 w-fit">
-                        <i data-lucide="lock" class="w-3 h-3"></i> 規劃中
-                    </button>
-                </div>
-
-                <!-- 09:31 - 10:00 -->
-                <div class="glass-panel p-6 rounded-2xl border-t-4 border-emerald-500 relative z-10 hover:-translate-y-2 transition duration-300">
-                    <div class="bg-slate-900 w-fit p-3 rounded-xl mb-4 text-emerald-500 border border-emerald-500/30">
-                        <i data-lucide="anchor" class="w-6 h-6"></i>
-                    </div>
-                    <div class="text-emerald-400 font-mono text-xs font-bold mb-1">09:31 - 10:00</div>
-                    <h3 class="text-xl font-bold mb-2">小海低階策略</h3>
-                    <p class="text-slate-400 text-sm mb-4">激情過後的冷靜期。在回檔中尋找支撐，利用五檔防守單進行低接佈局。</p>
-                    <button class="text-slate-500 text-sm font-bold flex items-center gap-2 cursor-not-allowed border border-slate-700 rounded px-3 py-1 w-fit">
-                        <i data-lucide="lock" class="w-3 h-3"></i> 規劃中
-                    </button>
-                </div>
-
-                <!-- 11:00 - 13:25 -->
-                <div class="glass-panel p-6 rounded-2xl border-t-4 border-purple-500 relative z-10 hover:-translate-y-2 transition duration-300">
-                    <div class="bg-slate-900 w-fit p-3 rounded-xl mb-4 text-purple-500 border border-purple-500/30">
-                        <i data-lucide="sunrise" class="w-6 h-6"></i>
-                    </div>
-                    <div class="text-purple-400 font-mono text-xs font-bold mb-1">11:00 - 13:25</div>
-                    <h3 class="text-xl font-bold mb-2">隔日衝策略</h3>
-                    <p class="text-slate-400 text-sm mb-4">尾盤偷襲戰法。觀察主力籌碼集中度與漲停意圖，提前卡位明日行情。</p>
-                    <button class="text-slate-500 text-sm font-bold flex items-center gap-2 cursor-not-allowed border border-slate-700 rounded px-3 py-1 w-fit">
-                        <i data-lucide="lock" class="w-3 h-3"></i> 規劃中
-                    </button>
-                </div>
-            </div>
+        <div id="vipPostsContainer" class="space-y-8">
+            <div class="text-center py-10 text-slate-500">正在加載特訓資料...</div>
         </div>
 
-        <!-- 區塊 C：進階戰法工具箱 -->
-        <div>
-            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-slate-200">
-                <i data-lucide="briefcase" class="text-yellow-500"></i> 特殊情境戰法
-            </h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-panel p-4 rounded-xl text-center hover:bg-slate-800 transition cursor-not-allowed opacity-75">
-                    <i data-lucide="lock" class="w-8 h-8 mx-auto mb-2 text-slate-500"></i>
-                    <h4 class="font-bold text-slate-300">鎖漲停策略</h4>
-                    <span class="text-xs text-slate-500">如何不被洗掉？</span>
-                </div>
-                <div class="glass-panel p-4 rounded-xl text-center hover:bg-slate-800 transition cursor-not-allowed opacity-75">
-                    <i data-lucide="lock" class="w-8 h-8 mx-auto mb-2 text-slate-500"></i>
-                    <h4 class="font-bold text-slate-300">漲停打開策略</h4>
-                    <span class="text-xs text-slate-500">該跑還是該接？</span>
-                </div>
-                <div class="glass-panel p-4 rounded-xl text-center hover:bg-slate-800 transition cursor-not-allowed opacity-75">
-                    <i data-lucide="lock" class="w-8 h-8 mx-auto mb-2 text-slate-500"></i>
-                    <h4 class="font-bold text-slate-300">開低處理策略</h4>
-                    <span class="text-xs text-slate-500">SOP 停損或加碼</span>
-                </div>
-                <div class="glass-panel p-4 rounded-xl text-center hover:bg-slate-800 transition cursor-not-allowed opacity-75">
-                    <i data-lucide="lock" class="w-8 h-8 mx-auto mb-2 text-slate-500"></i>
-                    <h4 class="font-bold text-slate-300">漲停次日判斷</h4>
-                    <span class="text-xs text-slate-500">開盤一分鐘定生死</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-16 text-center">
+        <div class="mt-16 text-center border-t border-slate-800 pt-8">
             <button onclick="logout()" class="text-slate-500 text-sm hover:text-white transition flex items-center justify-center gap-2 mx-auto">
                 <i data-lucide="log-out" class="w-4 h-4"></i> 登出特訓室
             </button>
         </div>
     </section>
 
-    <script>
-        lucide.createIcons();
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // =============================================
-        //  VIP 學員名單 (已更新 2025/12/11)
-        // =============================================
-        const vipList = [
-            "test@gmail.com",       // 測試帳號
-            "Yishung58@gmail.com",  // 瑄
-            "myehyehyeh@gmail.com", // Anita
-            "lovetobey0113@gmail.com", // 托比 (小寫 l 正確)
-            "Iovetobey0113@gmail.com", // 托比 (大寫 I 備用)
-            "meda0521@gmail.com"    // Putting
-        ];
-        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
+            authDomain: "gen-lang-client-0733075059.firebaseapp.com",
+            projectId: "gen-lang-client-0733075059",
+            storageBucket: "gen-lang-client-0733075059.firebasestorage.app",
+            messagingSenderId: "561243064522",
+            appId: "1:561243064522:web:cdfffd357c9af417b08c33",
+            measurementId: "G-D93F1E1GR3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, "seawebfire");
+        const auth = getAuth(app);
 
         const emailInput = document.getElementById('emailInput');
-        const errorContainer = document.getElementById('error-container');
         const loginSection = document.getElementById('login-section');
         const contentSection = document.getElementById('content-section');
+        const errorContainer = document.getElementById('error-container');
 
-        window.onload = () => {
-            const savedEmail = localStorage.getItem('littleSeaUser');
-            if(savedEmail && vipList.includes(savedEmail)) showContent();
-        }
+        // 檢查登入狀態
+        const savedEmail = localStorage.getItem('littleSeaVIP');
+        if(savedEmail) showContent();
 
-        function checkPermission() {
-            const email = emailInput.value.trim(); // 移除轉小寫，確保大小寫敏感度匹配
-            if (vipList.includes(email)) {
-                localStorage.setItem('littleSeaUser', email);
+        document.getElementById('verifyBtn').addEventListener('click', async () => {
+            const email = emailInput.value.trim().toLowerCase();
+            if(!email) return;
+
+            // 🔴 從資料庫驗證 Email
+            const q = query(collection(db, "vip_members"), where("email", "==", email));
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+                localStorage.setItem('littleSeaVIP', email);
                 showContent();
-                errorContainer.classList.add('hidden');
             } else {
                 errorContainer.classList.remove('hidden');
-                loginSection.classList.add('animate-pulse');
-                setTimeout(() => loginSection.classList.remove('animate-pulse'), 500);
             }
-        }
+        });
 
         function showContent() {
             loginSection.classList.add('hidden');
             contentSection.classList.remove('hidden-content');
-            contentSection.classList.add('fade-in');
+            lucide.createIcons();
+            loadVipPosts();
         }
 
-        function logout() {
-            localStorage.removeItem('littleSeaUser');
-            location.reload();
+        // 🟢 抓取分類為「特訓區」的文章
+        function loadVipPosts() {
+            const q = query(collection(db, "posts"), where("category", "==", "特訓區"), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const container = document.getElementById('vipPostsContainer');
+                container.innerHTML = '';
+                if(snapshot.empty) {
+                    container.innerHTML = '<p class="text-center text-slate-500">目前尚無特訓資料。</p>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const post = doc.data();
+                    const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleDateString() : '';
+                    container.insertAdjacentHTML('beforeend', `
+                        <article class="glass-panel p-6 rounded-2xl border-l-4 border-yellow-500">
+                            <div class="text-yellow-500 text-xs font-mono mb-2">${date}</div>
+                            <h2 class="text-xl font-bold text-white mb-4">${post.title}</h2>
+                            <div class="text-slate-300 leading-relaxed whitespace-pre-wrap">${post.content}</div>
+                        </article>
+                    `);
+                });
+            });
         }
+
+        window.logout = () => { localStorage.removeItem('littleSeaVIP'); location.reload(); };
+        lucide.createIcons();
     </script>
 </body>
 </html>
