@@ -76,6 +76,11 @@
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500">Key 檢查中...</div>
+                
+                <a href="index.html" class="text-gray-600 hover:text-blue-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition">
+                    <i class="fas fa-home"></i> 回首頁
+                </a>
+
                 <button onclick="toggleApiKeyInput()" class="text-gray-600 hover:text-sky-600 bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium"><i class="fas fa-robot"></i> AI 設定</button>
                 <button onclick="logout()" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg"><i class="fas fa-sign-out-alt"></i></button>
             </div>
@@ -92,8 +97,11 @@
         </div>
 
         <main class="flex-1 flex overflow-hidden flex-col md:flex-row">
-            <div class="w-full md:w-64 bg-slate-50 border-r border-gray-200 flex flex-col hidden md:flex">
-                <div class="p-3 border-b border-gray-200 font-bold text-gray-600 text-sm">文章列表 (<span id="postCount">0</span>)</div>
+            <div class="w-full md:w-72 bg-slate-50 border-r border-gray-200 flex flex-col hidden md:flex">
+                <div class="p-3 border-b border-gray-200 font-bold text-gray-600 text-sm flex justify-between items-center">
+                    <span>文章列表 (<span id="postCount">0</span>)</span>
+                    <i class="fas fa-list text-gray-400"></i>
+                </div>
                 <div id="postListContainer" class="flex-1 overflow-y-auto p-2 space-y-2">
                     <div id="loadingStatus" class="text-center text-gray-500 text-xs mt-10">連線中...</div>
                 </div>
@@ -152,21 +160,32 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ==============================================================
+        // ✅ 這裡已經換成你「最新、有效」的 Firebase Config
+        // ==============================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
-            authDomain: "littlesea-web.firebaseapp.com",
-            projectId: "littlesea-web",
-            storageBucket: "littlesea-web.firebasestorage.app",
-            messagingSenderId: "796678723012",
-            appId: "1:796678723012:web:6c501411714c2f49960091",
-            measurementId: "G-W8GSXYYY9L"
+            apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
+            authDomain: "gen-lang-client-0733075059.firebaseapp.com",
+            projectId: "gen-lang-client-0733075059",
+            storageBucket: "gen-lang-client-0733075059.firebasestorage.app",
+            messagingSenderId: "561243064522",
+            appId: "1:561243064522:web:cdfffd357c9af417b08c33",
+            measurementId: "G-D93F1E1GR3"
         };
+        // ==============================================================
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        signInAnonymously(auth).then(() => loadPosts()).catch(e => console.error(e));
+        // 監聽並自動讀取文章列表
+        signInAnonymously(auth).then(() => {
+            console.log("後台登入成功");
+            loadPosts();
+        }).catch(e => {
+            console.error("後台登入失敗", e);
+            alert("資料庫連線錯誤，請檢查 Config");
+        });
 
         function loadPosts() {
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
@@ -180,20 +199,34 @@
                     const post = docSnap.data();
                     const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleDateString() : '剛剛';
                     const item = document.createElement('div');
-                    item.className = 'bg-white p-3 rounded shadow-sm border border-gray-100 hover:border-sky-200 transition text-sm group cursor-pointer mb-2';
+                    item.className = 'bg-white p-3 rounded shadow-sm border border-gray-100 hover:border-sky-200 transition text-sm group cursor-pointer mb-2 relative';
+                    
+                    // ✅ 優化：刪除按鈕改為永遠顯示 (右上角紅色垃圾桶)，方便操作
                     item.innerHTML = `
-                        <div class="flex justify-between items-start mb-1">
+                        <div class="flex justify-between items-start mb-1 pr-6">
                             <span class="font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</span>
-                            <button onclick="window.deletePost('${docSnap.id}')" class="text-gray-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
                         </div>
-                        <div class="flex justify-between text-xs text-gray-400"><span>${post.category}</span><span>${date}</span></div>`;
+                        <div class="flex justify-between text-xs text-gray-400 mt-1">
+                            <span class="bg-gray-100 px-1 rounded">${post.category}</span>
+                            <span>${date}</span>
+                        </div>
+                        <button onclick="window.deletePost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600 p-1 transition" title="刪除文章">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    `;
                     list.appendChild(item);
                 });
             });
         }
 
         window.deletePost = async (id) => {
-            if (confirm("⚠️ 確定刪除？")) await deleteDoc(doc(db, "posts", id));
+            if (confirm("⚠️ 警告：確定要永久刪除這篇文章嗎？此動作無法復原。")) {
+                try {
+                    await deleteDoc(doc(db, "posts", id));
+                } catch(e) {
+                    alert("刪除失敗：" + e.message);
+                }
+            }
         }
 
         async function fetchPerplexity(prompt, apiKey) {
@@ -221,7 +254,7 @@
 
         window.rewriteWithAI = async function() {
             const apiKey = localStorage.getItem('gemini_api_key');
-            if (!apiKey) { alert("請設定 Perplexity Key！"); window.toggleApiKeyInput(); return; }
+            if (!apiKey) { alert("請先點擊右上角「AI 設定」輸入 Perplexity Key！"); window.toggleApiKeyInput(); return; }
             
             const content = document.getElementById('postContent').value;
             const category = document.querySelector('input[name="category"]:checked').value;
@@ -373,30 +406,4 @@ ${content}`;
         window.toggleApiKeyInput = () => document.getElementById('apiKeySection').classList.toggle('hidden');
         window.saveApiKey = () => {
             const key = document.getElementById('geminiApiKey').value.trim();
-            if(key) { localStorage.setItem('gemini_api_key', key); alert('已儲存'); location.reload(); }
-        }
-        window.clearApiKey = () => { localStorage.removeItem('gemini_api_key'); location.reload(); }
-
-        window.submitPost = async function() {
-            const title = document.getElementById('postTitle').value;
-            const content = document.getElementById('postContent').value;
-            const category = document.querySelector('input[name="category"]:checked').value;
-            const btn = document.getElementById('submitBtn');
-
-            if (!title || !content) { alert("內容不能為空！"); return; }
-
-            try {
-                btn.disabled = true;
-                await addDoc(collection(db, "posts"), {
-                    title, content, category, author: "小海", timestamp: serverTimestamp()
-                });
-                alert("發布成功！");
-                location.reload(); 
-            } catch (e) { alert("發布失敗: " + e.message); } 
-            finally { btn.disabled = false; }
-        }
-
-        checkKeyStatus();
-    </script>
-</body>
-</html>
+            if(
