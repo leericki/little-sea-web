@@ -3,31 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v30.1 海納 AI 版</title>
+    <title>小海控制台 | v30.2 海納完全體</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
         .tab-active { border-bottom: 3px solid #0ea5e9; color: #0ea5e9; }
-        .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; }
-        .preview-box strong { color: #0369a1; background-color: #f0f9ff; padding: 0 4px; border-radius: 4px; font-weight: 700; }
+        .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
+        .preview-box h3 { font-size: 1.25rem; font-weight: 900; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.8rem; border-left: 5px solid #0ea5e9; padding-left: 0.5rem; }
+        .preview-box strong, .preview-box b { color: #0369a1; background-color: #f0f9ff; padding: 0 4px; border-radius: 4px; font-weight: 700; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <div id="loginSection" class="min-h-screen flex items-center justify-center absolute inset-0 z-50 bg-gray-100">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 text-center">
+    <div id="loginSection" class="min-h-screen flex items-center justify-center absolute inset-0 z-50 bg-gray-100 text-center">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
             <h2 class="text-2xl font-bold text-gray-800 mb-8">管理員登入</h2>
             <input type="password" id="passwordInput" placeholder="請輸入密碼 (0712)" class="w-full px-4 py-3 rounded-lg border border-gray-300 text-center mb-4">
-            <button id="loginBtn" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg">驗證身分</button>
+            <button id="loginBtn" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg transition">驗證身分</button>
         </div>
     </div>
 
     <div id="dashboardSection" class="h-full hidden flex-col">
-        <nav class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40">
+        <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-4">
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統</h1>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full">v30.2</span></h1>
                 <div class="flex gap-4 ml-6">
                     <button id="tabPostBtn" class="text-sm font-bold pb-1 tab-active">文章管理</button>
                     <button id="tabVipBtn" class="text-sm font-bold pb-1 text-gray-400">學員管理 (VIP)</button>
@@ -35,13 +36,17 @@
             </div>
             <div class="flex items-center gap-3">
                 <div id="keyStatusDisplay" class="hidden md:block text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-500">Key 檢查中...</div>
+                <a href="index.html" class="text-gray-600 hover:text-blue-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition">
+                    🏠 回首頁
+                </a>
                 <button id="aiConfigBtn" class="text-gray-600 hover:text-sky-600 bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium">🤖 AI 設定</button>
-                <button id="logoutBtn" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg">登出</button>
+                <button id="logoutBtn" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg font-bold">登出</button>
             </div>
         </nav>
 
         <div id="apiKeySection" class="hidden bg-sky-50 border-b border-sky-100 p-4 shrink-0">
             <div class="max-w-4xl mx-auto flex gap-2 items-center">
+                <i class="fas fa-key text-sky-500"></i>
                 <input type="password" id="geminiApiKey" placeholder="請貼上 Perplexity Key (pplx-...)" class="flex-1 px-3 py-2 rounded border text-sm">
                 <button id="saveKeyBtn" class="bg-sky-600 text-white px-4 py-2 rounded text-sm">儲存</button>
             </div>
@@ -49,52 +54,66 @@
 
         <main id="postView" class="flex-1 flex overflow-hidden flex-col md:flex-row">
             <div class="w-full md:w-72 bg-slate-50 border-r border-gray-200 flex flex-col hidden md:flex">
-                <div class="p-3 border-b border-gray-200 font-bold text-gray-600 text-sm flex justify-between items-center">
-                    <span>文章列表 (<span id="postCount">0</span>)</span>
-                </div>
+                <div class="p-3 border-b border-gray-200 font-bold text-gray-600 text-sm">文章列表 (<span id="postCount">0</span>)</div>
                 <div id="postListContainer" class="flex-1 overflow-y-auto p-2 space-y-2"></div>
             </div>
+
             <div class="flex-1 flex flex-col border-r border-gray-200 bg-white overflow-y-auto">
                 <div class="p-6 space-y-5 max-w-3xl mx-auto w-full">
-                    <div class="flex justify-between items-end">
-                        <label class="block text-sm font-bold text-gray-700">文章標題</label>
-                        <button id="aiTitleBtn" class="text-sky-600 text-xs font-bold bg-sky-50 px-2 py-1 rounded border border-sky-100">✨ AI 自動標題</button>
+                    <div>
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="block text-sm font-bold text-gray-700">文章標題</label>
+                            <button id="aiTitleBtn" class="text-sky-600 hover:text-sky-800 text-xs font-bold bg-sky-50 px-2 py-1 rounded border border-sky-100">✨ AI 自動下標</button>
+                        </div>
+                        <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300 shadow-sm outline-none focus:border-sky-500">
                     </div>
-                    <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300">
-                    <label class="block text-sm font-bold text-gray-700">文章分類</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <label class="cursor-pointer"><input type="radio" name="category" value="盤前分析" class="peer sr-only" checked><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-blue-600 peer-checked:text-white">盤前</div></label>
-                        <label class="cursor-pointer"><input type="radio" name="category" value="盤中分析" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-red-100 rounded-md peer-checked:bg-red-600 peer-checked:text-white font-bold text-red-600">🔥 盤中</div></label>
-                        <label class="cursor-pointer"><input type="radio" name="category" value="特訓區" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-emerald-100 rounded-md peer-checked:bg-emerald-600 peer-checked:text-white font-bold text-emerald-600">🟢 特訓</div></label>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">文章分類</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="cursor-pointer"><input type="radio" name="category" value="盤前分析" class="peer sr-only" checked><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-blue-600 peer-checked:text-white">盤前</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="盤中分析" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-red-100 rounded-md peer-checked:bg-red-600 peer-checked:text-white font-bold text-red-600">🔥 盤中</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="特訓區" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-emerald-100 rounded-md peer-checked:bg-emerald-600 peer-checked:text-white font-bold text-emerald-600">🟢 特訓</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="盤後分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-indigo-600 peer-checked:text-white">盤後</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="周末分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-purple-600 peer-checked:text-white">周末</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="心態分享" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-amber-500 peer-checked:text-white">心態</div></label>
+                        </div>
                     </div>
-                    <div class="flex justify-between items-end">
-                        <label class="block text-sm font-bold text-gray-700">內容編輯</label>
-                        <button id="aiRewriteBtn" class="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold py-1.5 px-4 rounded-full">呼叫總編輯海納排版</button>
+
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between items-end">
+                            <label class="block text-sm font-bold text-gray-700">內容編輯</label>
+                            <button id="aiRewriteBtn" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white text-sm font-bold py-1.5 px-4 rounded-full shadow-md transition transform active:scale-95">
+                                <i class="fas fa-microchip"></i> 呼叫總編輯海納排版
+                            </button>
+                        </div>
+                        <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 font-mono text-sm leading-relaxed" placeholder="請輸入筆記..." oninput="updatePreview()"></textarea>
                     </div>
-                    <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 font-mono text-sm leading-relaxed" placeholder="請輸入筆記..."></textarea>
-                    <button id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform active:scale-95">確認發布文章</button>
+
+                    <button id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform active:scale-95">確認發布文章</button>
                 </div>
             </div>
-            <div class="hidden md:flex flex-1 flex-col bg-slate-50 overflow-y-auto">
+
+            <div class="hidden md:flex flex-1 flex-col bg-slate-50 border-l border-gray-200 overflow-y-auto">
                 <div class="p-3 bg-white border-b border-gray-200 font-bold text-gray-500 text-sm">即時預覽</div>
                 <div class="p-6">
-                    <div class="bg-white rounded-xl shadow-sm p-8 max-w-lg mx-auto min-h-[500px]">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-lg mx-auto min-h-[500px]">
                         <h2 id="previewTitle" class="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-gray-100 pb-4">文章標題...</h2>
-                        <div id="previewContent" class="preview-box"></div>
+                        <div id="previewContent" class="preview-box"><span class="text-gray-300 text-center block mt-10">內容預覽...</span></div>
                     </div>
                 </div>
             </div>
         </main>
 
         <main id="vipView" class="flex-1 hidden p-8 overflow-y-auto">
-            <div class="max-w-2xl mx-auto bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-                <h3 class="text-lg font-bold mb-4">新增特訓學員 Email</h3>
+            <div class="max-w-2xl mx-auto bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-user-plus mr-2 text-emerald-500"></i> 新增特訓學員</h3>
                 <div class="flex gap-4 mb-8">
-                    <input type="email" id="vipEmailInput" placeholder="test@gmail.com" class="flex-1 px-4 py-2 border rounded-lg">
-                    <button id="addVipBtn" class="bg-emerald-600 text-white px-6 rounded-lg font-bold">新增</button>
+                    <input type="email" id="vipEmailInput" placeholder="輸入學員 Email" class="flex-1 px-4 py-3 rounded-lg border border-gray-300">
+                    <button id="addVipBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 rounded-lg transition">新增學員</button>
                 </div>
-                <h3 class="text-lg font-bold mb-4">目前學員名單 (<span id="vipCount">0</span>)</h3>
-                <div id="vipListTable" class="divide-y border rounded-xl overflow-hidden"></div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-users mr-2 text-blue-500"></i> 目前特訓名單 (<span id="vipCount">0</span>)</h3>
+                <div id="vipListTable" class="divide-y divide-gray-50 border rounded-xl overflow-hidden"></div>
             </div>
         </main>
     </div>
@@ -116,7 +135,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app, "seawebfire");
+        const db = getFirestore(app, "seawebfire"); // ✅ 指定正確資料庫
 
         // --- 登入與分頁控制 ---
         document.getElementById('loginBtn').addEventListener('click', () => {
@@ -144,9 +163,9 @@
         document.getElementById('tabPostBtn').addEventListener('click', () => switchTab('post'));
         document.getElementById('tabVipBtn').addEventListener('click', () => switchTab('vip'));
 
-        // --- 文章功能 ---
+        // --- 核心文章邏輯 ---
         function loadPosts() {
-            const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+            const q = query(collection(db, \"posts\"), orderBy(\"timestamp\", \"desc\"));
             onSnapshot(q, (snapshot) => {
                 const list = document.getElementById('postListContainer');
                 document.getElementById('postCount').innerText = snapshot.docs.length;
@@ -158,36 +177,36 @@
                     item.innerHTML = `
                         <div class="font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</div>
                         <div class="text-xs text-gray-400 mt-1">${post.category}</div>
-                        <button onclick="window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>`;
+                        <button onclick="window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600 transition"><i class="fas fa-trash-alt"></i></button>`;
                     list.appendChild(item);
                 });
             });
         }
-        window.delPost = async (id) => { if (confirm("確定刪除嗎？")) await deleteDoc(doc(db, "posts", id)); };
+        window.delPost = async (id) => { if (confirm(\"確定刪除文章？\")) await deleteDoc(doc(db, \"posts\", id)); };
 
-        // --- VIP 功能 ---
+        // --- VIP 學員邏輯 ---
         function loadVIPs() {
-            onSnapshot(collection(db, "vip_members"), (snapshot) => {
+            onSnapshot(collection(db, \"vip_members\"), (snapshot) => {
                 const list = document.getElementById('vipListTable');
                 document.getElementById('vipCount').innerText = snapshot.docs.length;
                 list.innerHTML = '';
                 snapshot.forEach((docSnap) => {
                     const vip = docSnap.data();
                     const div = document.createElement('div');
-                    div.className = 'flex justify-between p-4 bg-white items-center';
-                    div.innerHTML = `<span>${vip.email}</span><button onclick="window.delVip('${docSnap.id}')" class="text-red-400">移出</button>`;
+                    div.className = 'flex justify-between p-4 bg-white items-center hover:bg-slate-50';
+                    div.innerHTML = `<span>${vip.email}</span><button onclick=\"window.delVip('${docSnap.id}')\" class=\"text-red-400 hover:text-red-600 transition\"><i class=\"fas fa-user-minus mr-1\"></i>移出</button>`;
                     list.appendChild(div);
                 });
             });
         }
         document.getElementById('addVipBtn').addEventListener('click', async () => {
             const email = document.getElementById('vipEmailInput').value.trim().toLowerCase();
-            if (email) await addDoc(collection(db, "vip_members"), { email });
+            if (email) await addDoc(collection(db, \"vip_members\"), { email, addedAt: serverTimestamp() });
             document.getElementById('vipEmailInput').value = '';
         });
-        window.delVip = async (id) => { if (confirm("確定移出嗎？")) await deleteDoc(doc(db, "vip_members", id)); };
+        window.delVip = async (id) => { if (confirm(\"確定將該學員移出名單？\")) await deleteDoc(doc(db, \"vip_members\", id)); };
 
-        // --- AI 海納編排功能 (完整補回) ---
+        // --- 🚀 AI 海納編排功能 (最強框架版) ---
         async function fetchPerplexity(prompt, apiKey) {
             const res = await fetch('https://api.perplexity.ai/chat/completions', {
                 method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -199,40 +218,58 @@
         document.getElementById('aiRewriteBtn').addEventListener('click', async () => {
             const apiKey = localStorage.getItem('gemini_api_key');
             const content = document.getElementById('postContent').value;
-            const category = document.querySelector('input[name="category"]:checked').value;
-            if (!apiKey || !content) return alert("請輸入內容及設定 Key");
-            const btn = document.getElementById('aiRewriteBtn'); btn.disabled = true; btn.innerText = "總編輯審稿中...";
+            const category = document.querySelector('input[name=\"category\"]:checked').value;
+            if (!apiKey || !content) return alert(\"請先貼上 Key 並輸入內容\");
+            
+            const btn = document.getElementById('aiRewriteBtn'); btn.disabled = true; btn.innerText = \"總編輯審稿中...\";
             try {
-                const prompt = `你現在是總編輯「海納 (Haina)」，依照「${category}」框架排版並使用粗體標註重點：\n\n原始內容：${content}`;
+                const prompt = `
+你現在是「小海財經」總編輯「海納」。請將散情報填入【小海${category}觀察室】框架。
+規則：專業、客觀、條理分明。使用 Markdown 並將重點 **粗體標示**。
+
+## 輸出格式 (請直接套用，保持標題符號一致)
+【小海${category}觀察室】YYYY/MM/DD
+🎯 核心戰略
+- 昨/今日回顧與展望：
+- 今日三大主軸：
+- 觀盤三字訣：
+
+一、🌍 市場數據解讀
+二、📈 技術面分析 (K線、均線、支撐壓力)
+三、💰 籌碼面解析 (法人動向)
+四、💥 產業／族群焦點
+五、💡 操作策略建議 (早、中、尾盤)
+六、⚠️ 風險提示
+七、📅 關鍵時間點
+八、💡 小海總結 (盤面回顧、投資優先順序、核心信念)
+
+📌 免責聲明：本報告僅供參考，投資有風險，入市需謹慎。
+📅 報告製作：小海觀察室
+
+原始內容：\n${content}`;
                 const result = await fetchPerplexity(prompt, apiKey);
                 document.getElementById('postContent').value = result.replace(/```markdown/g, '').replace(/```/g, '');
                 updatePreview();
-            } catch (e) { alert("AI 失敗"); } finally { btn.disabled = false; btn.innerText = "呼叫總編輯海納排版"; }
+            } catch (e) { alert(\"AI 失敗\"); } finally { btn.disabled = false; btn.innerText = \"呼叫總編輯海納排版\"; }
         });
 
         const updatePreview = () => {
-            document.getElementById('previewTitle').innerText = document.getElementById('postTitle').value || "文章標題...";
-            document.getElementById('previewContent').innerHTML = document.getElementById('postContent').value ? marked.parse(document.getElementById('postContent').value) : "";
+            document.getElementById('previewTitle').innerText = document.getElementById('postTitle').value || \"文章標題...\";
+            document.getElementById('previewContent').innerHTML = document.getElementById('postContent').value ? marked.parse(document.getElementById('postContent').value) : \"\";
         };
         document.getElementById('postTitle').addEventListener('input', updatePreview);
         document.getElementById('postContent').addEventListener('input', updatePreview);
-        document.getElementById('aiTitleBtn').addEventListener('click', async () => {
-            const apiKey = localStorage.getItem('gemini_api_key');
-            if(!apiKey) return;
-            const title = await fetchPerplexity(`幫這段台股分析生成吸睛標題：${document.getElementById('postContent').value.substring(0,300)}`, apiKey);
-            document.getElementById('postTitle').value = title.replace(/[#"]/g, '').trim(); updatePreview();
-        });
 
         document.getElementById('submitBtn').addEventListener('click', async () => {
             const btn = document.getElementById('submitBtn');
             try {
-                btn.disabled = true; btn.innerText = "發布中...";
-                await addDoc(collection(db, "posts"), {
+                btn.disabled = true; btn.innerText = \"發布中...\";
+                await addDoc(collection(db, \"posts\"), {
                     title: document.getElementById('postTitle').value, content: document.getElementById('postContent').value,
-                    category: document.querySelector('input[name="category"]:checked').value, author: "小海", timestamp: serverTimestamp()
+                    category: document.querySelector('input[name=\"category\"]:checked').value, author: \"小海\", timestamp: serverTimestamp()
                 });
-                alert("✅ 發布成功"); location.reload();
-            } catch (e) { alert("失敗"); btn.disabled = false; }
+                alert(\"✅ 發布成功\"); location.reload();
+            } catch (e) { alert(\"失敗\"); btn.disabled = false; }
         });
 
         document.getElementById('aiConfigBtn').addEventListener('click', () => document.getElementById('apiKeySection').classList.toggle('hidden'));
