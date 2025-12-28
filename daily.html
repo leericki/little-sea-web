@@ -47,12 +47,13 @@
     <script>lucide.createIcons();</script>
 
     <script type="module">
+        // 使用 CDN 連結載入 Firebase 模組
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ==============================================================
-        // 🔴 請將此處的大括號內容，替換成你剛剛在 Firebase 複製的新代碼！
+        // ✅ 已經填入你剛剛提供的設定值
         // ==============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
@@ -61,7 +62,7 @@
             storageBucket: "gen-lang-client-0733075059.firebasestorage.app",
             messagingSenderId: "561243064522",
             appId: "1:561243064522:web:cdfffd357c9af417b08c33",
-            measurementId: "G-D93F1E1GR3" 
+            measurementId: "G-D93F1E1GR3"
         };
         // ==============================================================
 
