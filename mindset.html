@@ -12,7 +12,6 @@
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
-    <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-amber-100">
         <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
@@ -25,7 +24,6 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
         <div class="bg-amber-50 rounded-xl p-4 mb-8 text-amber-800 text-sm border border-amber-200 flex items-start gap-3">
             <i data-lucide="quote" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
@@ -33,10 +31,10 @@
         </div>
 
         <div id="mindsetContainer" class="space-y-8">
-            <!-- Loading State -->
             <div class="text-center py-20 text-amber-400/50">
                 <i data-lucide="coffee" class="w-10 h-10 animate-bounce mx-auto mb-3"></i>
                 <p class="text-slate-500">正在沖泡心靈雞湯...</p>
+                <p class="text-xs mt-2 text-slate-300">連線中...</p>
             </div>
         </div>
     </main>
@@ -47,20 +45,20 @@
 
     <script>lucide.createIcons();</script>
 
-    <!-- Firebase Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ✅ 已更新為新的 Config
         const firebaseConfig = {
-            apiKey: "AIzaSyB3_iiersG3Fff4oj_ouyu_lLs3flzPmKE",
-            authDomain: "littlesea-web.firebaseapp.com",
-            projectId: "littlesea-web",
-            storageBucket: "littlesea-web.firebasestorage.app",
-            messagingSenderId: "796678723012",
-            appId: "1:796678723012:web:6c501411714c2f49960091",
-            measurementId: "G-W8GSXYYY9L"
+            apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
+            authDomain: "gen-lang-client-0733075059.firebaseapp.com",
+            projectId: "gen-lang-client-0733075059",
+            storageBucket: "gen-lang-client-0733075059.firebasestorage.app",
+            messagingSenderId: "561243064522",
+            appId: "1:561243064522:web:cdfffd357c9af417b08c33",
+            measurementId: "G-D93F1E1GR3"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -70,17 +68,15 @@
         const container = document.getElementById('mindsetContainer');
 
         function startListening() {
-            // 讀取 "posts"
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             
             onSnapshot(q, (snapshot) => {
                 container.innerHTML = ''; 
-
                 let hasContent = false;
 
                 snapshot.forEach((doc) => {
                     const post = doc.data();
-                    
+                    // 這裡只顯示類別為 "心態分享" 的文章
                     if (post.category === '心態分享') {
                         hasContent = true;
                         const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('zh-TW', { year:'numeric', month: '2-digit', day: '2-digit' }) : '剛剛';
@@ -117,28 +113,18 @@
                     <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
                         <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
                         <p class="font-bold">讀取資料失敗</p>
-                        <p class="text-xs mt-2 bg-white/50 p-2 rounded text-left font-mono">${error.message}</p>
+                        <p class="text-xs mt-2 bg-white/50 p-2 rounded text-left font-mono">${error.code || error.message}</p>
                     </div>`;
                 lucide.createIcons();
             });
         }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
+        signInAnonymously(auth)
+            .then(() => { startListening(); })
+            .catch((error) => {
+                console.warn("Auth failed, trying direct access...", error);
                 startListening();
-            } else {
-                signInAnonymously(auth).then(() => {}).catch((error) => {
-                    console.error("Auth Error:", error);
-                    container.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-8 rounded-xl text-center">
-                        <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2"></i>
-                        <p class="font-bold">登入驗證失敗</p>
-                        <p class="text-xs mt-2 bg-white/50 p-2 rounded text-left font-mono">${error.message}</p>
-                    </div>`;
-                    lucide.createIcons();
-                });
-            }
-        });
+            });
     </script>
 </body>
 </html>

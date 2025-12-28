@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海後台</title>
+    <title>小海後台 | 發文系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 【請貼上您的 Firebase Config】
+        // ✅ 已填入新設定
         const firebaseConfig = {
-            apiKey: "您的_API_KEY",
-            authDomain: "您的_PROJECT.firebaseapp.com",
-            projectId: "您的_PROJECT_ID",
-            storageBucket: "您的_BUCKET",
-            messagingSenderId: "您的_ID",
-            appId: "您的_APP_ID"
+            apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
+            authDomain: "gen-lang-client-0733075059.firebaseapp.com",
+            projectId: "gen-lang-client-0733075059",
+            storageBucket: "gen-lang-client-0733075059.firebasestorage.app",
+            messagingSenderId: "561243064522",
+            appId: "1:561243064522:web:cdfffd357c9af417b08c33",
+            measurementId: "G-D93F1E1GR3"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -25,31 +26,90 @@
         window.publishArticle = async () => {
             const pwd = document.getElementById('password').value;
             if(pwd !== "8888") { alert("密碼錯誤！"); return; }
+            
             const btn = document.getElementById('submitBtn');
-            const date = document.getElementById('date').value;
+            const date = document.getElementById('date').value; // 雖然有自動時間戳記，但保留手動日期欄位備用
+            const category = document.getElementById('category').value;
             const title = document.getElementById('title').value;
             const content = document.getElementById('content').value;
 
-            if(!date || !title || !content) { alert("請填寫完整！"); return; }
-            btn.innerText = "發布中..."; btn.disabled = true;
+            if(!title || !content) { alert("標題和內容不能為空！"); return; }
+            
+            btn.innerText = "發布中..."; 
+            btn.disabled = true;
+            btn.classList.add("opacity-50");
 
             try {
-                await addDoc(collection(db, "articles"), { date, title, content, timestamp: serverTimestamp() });
+                // ✅ 修正：寫入到 'posts' 集合，並加入 category 欄位
+                await addDoc(collection(db, "posts"), { 
+                    date: date,
+                    category: category, 
+                    title: title, 
+                    content: content, 
+                    timestamp: serverTimestamp() 
+                });
+                
                 alert("✅ 發布成功！");
-                document.getElementById('title').value = ""; document.getElementById('content').value = "";
-                btn.innerText = "發布文章"; btn.disabled = false;
-            } catch (e) { alert("❌ 失敗: " + e.message); btn.disabled = false; }
+                // 清空欄位
+                document.getElementById('title').value = ""; 
+                document.getElementById('content').value = "";
+                
+            } catch (e) { 
+                console.error(e);
+                alert("❌ 失敗: " + e.message); 
+            } finally {
+                btn.innerText = "發布文章"; 
+                btn.disabled = false;
+                btn.classList.remove("opacity-50");
+            }
         }
     </script>
 </head>
-<body class="bg-slate-900 text-white p-8 max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6 text-yellow-400">寫作後台</h1>
-    <div class="space-y-4">
-        <input type="password" id="password" value="8888" class="w-full bg-slate-800 p-3 rounded text-white border border-slate-600" placeholder="密碼">
-        <input type="text" id="date" class="w-full bg-slate-800 p-3 rounded text-white border border-slate-600" placeholder="日期">
-        <input type="text" id="title" class="w-full bg-slate-800 p-3 rounded text-white border border-slate-600" placeholder="標題">
-        <textarea id="content" rows="10" class="w-full bg-slate-800 p-3 rounded text-white border border-slate-600" placeholder="內容"></textarea>
-        <button id="submitBtn" onclick="publishArticle()" class="w-full bg-yellow-500 text-slate-900 font-bold py-3 rounded hover:bg-yellow-400">發布文章</button>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-2xl w-full space-y-6">
+        <h1 class="text-3xl font-bold text-yellow-400 text-center mb-8">小海觀點 | 發文後台</h1>
+        
+        <div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 space-y-4">
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">管理密碼</label>
+                <input type="password" id="password" value="8888" class="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-600 focus:border-yellow-400 outline-none transition">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">日期 (選填)</label>
+                    <input type="text" id="date" class="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-600 focus:border-yellow-400 outline-none transition" placeholder="例如：2025/01/01">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">文章分類</label>
+                    <select id="category" class="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-600 focus:border-yellow-400 outline-none transition appearance-none">
+                        <option value="盤前分析">盤前分析 (藍色)</option>
+                        <option value="盤中分析">盤中分析 (紅色)</option>
+                        <option value="盤後分析">盤後分析 (深藍)</option>
+                        <option value="周末分析">周末分析 (紫色)</option>
+                        <option value="心態分享">✨ 心態分享 (黃色/獨立頁面)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">文章標題</label>
+                <input type="text" id="title" class="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-600 focus:border-yellow-400 outline-none transition" placeholder="輸入標題...">
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">文章內容</label>
+                <textarea id="content" rows="12" class="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-600 focus:border-yellow-400 outline-none transition font-mono leading-relaxed" placeholder="在這裡輸入內容..."></textarea>
+            </div>
+
+            <button id="submitBtn" onclick="publishArticle()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-4 rounded-lg shadow-lg shadow-yellow-500/20 transition transform active:scale-95">
+                發布文章
+            </button>
+        </div>
+        
+        <p class="text-center text-slate-500 text-sm">
+            確認 Firebase Config 已更新至最新版本
+        </p>
     </div>
 </body>
 </html>
