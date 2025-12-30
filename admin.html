@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
-        .tab-active { border-bottom: 3px solid #0ea5e9; color: #0ea5e9; }
         .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
         .preview-box strong, .preview-box b { color: #0369a1; background-color: #f0f9ff; padding: 0 4px; border-radius: 4px; font-weight: 700; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -32,7 +31,7 @@
             <div class="flex items-center gap-4">
                 <h1 class="font-bold text-gray-800 text-lg"><i class="fas fa-ship text-sky-600 mr-2"></i>小海發文系統</h1>
                 <div class="flex gap-4 ml-6 text-sm">
-                    <button id="tabPostBtn" class="font-bold pb-1 tab-active transition">文章管理</button>
+                    <button id="tabPostBtn" class="font-bold pb-1 border-b-2 border-sky-500 text-sky-600">文章管理</button>
                     <button id="tabVipBtn" class="font-bold pb-1 text-gray-400 hover:text-gray-600 transition">學員管理</button>
                 </div>
             </div>
@@ -143,7 +142,7 @@
     </div>
 
     <script type="module">
-        // ✅ 將配置直接寫入，確保本地開啟也能運作
+        // ✅ [關鍵修正] 使用你截圖中的正確設定
         const firebaseConfig = {
             apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
             authDomain: "gen-lang-client-0733075059.firebaseapp.com",
@@ -154,7 +153,7 @@
             measurementId: "G-D93F1E1GR3"
         };
         const ADMIN_PASS = "0712";
-        // 預設 Key
+        // 你的 Google Gemini Key (預設)
         const DEFAULT_G_KEY = "AIzaSyCGJpnYdbgUVr0UW_OUfUxOV12gUro-pv4";
         const DEFAULT_P_KEY = ""; 
 
@@ -164,7 +163,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        // ✅ 修正：使用預設資料庫 (移除 "seawebfire")
+        // ✅ [關鍵修正] 使用預設資料庫 (不加參數)
         const db = getFirestore(app);
 
         // --- AI 選單狀態管理 ---
@@ -235,10 +234,10 @@
             const tV = document.getElementById('tabVipBtn'); 
             if (target === 'post') { 
                 postV.classList.remove('hidden'); postV.classList.add('flex'); vipV.classList.add('hidden'); 
-                tP.className = 'font-bold pb-1 tab-active transition'; tV.className = 'font-bold pb-1 text-gray-400 hover:text-gray-600 transition'; 
+                tP.className = 'font-bold pb-1 border-b-2 border-sky-500 text-sky-600 transition'; tV.className = 'font-bold pb-1 text-gray-400 hover:text-gray-600 transition'; 
             } else { 
                 postV.classList.add('hidden'); postV.classList.remove('flex'); vipV.classList.remove('hidden'); 
-                tV.className = 'font-bold pb-1 tab-active transition'; tP.className = 'font-bold pb-1 text-gray-400 hover:text-gray-600 transition'; 
+                tV.className = 'font-bold pb-1 border-b-2 border-sky-500 text-sky-600 transition'; tP.className = 'font-bold pb-1 text-gray-400 hover:text-gray-600 transition'; 
             } 
         };
         document.getElementById('tabPostBtn').addEventListener('click', () => switchTab('post'));
@@ -253,11 +252,11 @@
                 snapshot.forEach((docSnap) => { 
                     const post = docSnap.data(); 
                     const item = document.createElement('div'); 
-                    item.className = 'bg-white p-3 rounded shadow-sm border mb-2 relative group hover:shadow-md transition'; 
+                    item.className = 'bg-white p-3 rounded shadow-sm border mb-2 relative group hover:shadow-md transition cursor-pointer'; 
                     item.innerHTML = `
                         <div class="font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</div>
                         <div class="text-xs text-gray-400 mt-1 flex justify-between"><span>${post.category}</span></div>
-                        <button onclick="window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>`; 
+                        <button onclick="event.stopPropagation(); window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600 transition opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>`; 
                     list.appendChild(item); 
                 }); 
             }); 
@@ -307,68 +306,4 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${engine === 'perplexity' ? '海納思考中...' : 'Gemini 撰寫中...'}`;
 
-            const systemPrompt = `你現在是「小海財經」總編輯「海納 (Haina)」。請將內容填入【小海${category}觀察室】專屬框架。專業、條理分明。使用 Markdown 並將重點 **粗體標示**。包含：🎯核心戰略、一、數據解讀、二、技術分析、三、籌碼解析、四、產業焦點、五、策略建議、💡總結。\n\n原始內容：\n${content}`;
-
-            try {
-                let resultText = "";
-                if (engine === 'perplexity') {
-                    const res = await fetch('https://api.perplexity.ai/chat/completions', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${pKey}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: 'sonar-pro',
-                            messages: [{ role: 'system', content: 'You are financial editor Haina.' }, { role: 'user', content: systemPrompt }],
-                            temperature: 0.2
-                        })
-                    });
-                    const data = await res.json();
-                    if(data.error) throw new Error(data.error.message);
-                    resultText = data.choices[0].message.content;
-                } else {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
-                    });
-                    const data = await res.json();
-                    if(data.error) throw new Error(data.error.message);
-                    resultText = data.candidates[0].content.parts[0].text;
-                }
-                
-                document.getElementById('postContent').value = resultText.replace(/```markdown/g, '').replace(/```/g, '');
-                updatePreview();
-
-            } catch (e) {
-                alert(`❌ 執行失敗：${e.message}`);
-                console.error(e);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        });
-
-        window.updatePreview = () => { 
-            document.getElementById('previewTitle').innerText = document.getElementById('postTitle').value || "文章標題..."; 
-            document.getElementById('previewContent').innerHTML = document.getElementById('postContent').value ? marked.parse(document.getElementById('postContent').value) : ""; 
-        };
-        document.getElementById('postTitle').addEventListener('input', updatePreview);
-        document.getElementById('postContent').addEventListener('input', updatePreview);
-        document.getElementById('aiTitleBtn').addEventListener('click', async () => { alert("請先完成文章內容，再使用 AI 生成標題功能"); });
-
-        document.getElementById('submitBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('submitBtn');
-            try {
-                btn.disabled = true; btn.innerText = "發布中...";
-                await addDoc(collection(db, "posts"), {
-                    title: document.getElementById('postTitle').value,
-                    content: document.getElementById('postContent').value,
-                    category: document.querySelector('input[name="category"]:checked').value,
-                    author: "小海",
-                    timestamp: serverTimestamp()
-                });
-                alert("✅ 文章已發布！"); location.reload();
-            } catch (e) { alert("發布失敗"); btn.disabled = false; }
-        });
-    </script>
-</body>
-</html>
+            const systemPrompt = `你現在是「小海
