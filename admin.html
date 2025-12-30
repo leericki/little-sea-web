@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | AI 雙引擎完全體</title>
+    <title>小海控制台 | 管理中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -12,7 +12,6 @@
         .tab-active { border-bottom: 3px solid #0ea5e9; color: #0ea5e9; }
         .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
         .preview-box strong, .preview-box b { color: #0369a1; background-color: #f0f9ff; padding: 0 4px; border-radius: 4px; font-weight: 700; }
-        /* 隱藏捲軸但可捲動 */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -77,8 +76,8 @@
                     
                     <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 p-1 rounded-lg">
                         <select id="aiEngineSelect" class="text-xs font-bold text-gray-700 bg-transparent border-none outline-none cursor-pointer pr-1">
-                            <option value="perplexity">🌊 Perplexity (檢查中...)</option>
-                            <option value="gemini">♊ Google Gemini (檢查中...)</option>
+                            <option value="perplexity">🌊 Perplexity (海納)</option>
+                            <option value="gemini">♊ Google Gemini (文筆)</option>
                         </select>
                         <button onclick="document.getElementById('aiConfigModal').classList.remove('hidden')" class="text-gray-400 hover:text-blue-600 transition p-1" title="設定 API Key">
                             <i class="fas fa-cog"></i>
@@ -125,10 +124,10 @@
             </div>
             <div class="p-6 space-y-5">
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-3 text-sm text-blue-700 mb-2">
-                    <i class="fas fa-info-circle mr-1"></i> 設定將儲存於您的瀏覽器中，無需修改程式碼。
+                    <i class="fas fa-info-circle mr-1"></i> 設定將儲存於您的瀏覽器中，安全方便。
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">🌊 Perplexity API Key (海納)</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">🌊 Perplexity API Key</label>
                     <input type="password" id="inputPerplexityKey" placeholder="pplx-..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
                 </div>
                 <div>
@@ -144,51 +143,60 @@
     </div>
 
     <script type="module">
-        // 1. 引入 config.js (作為備用預設值)
-        import { firebaseConfig, DB_NAME, ADMIN_PASS, PERPLEXITY_KEY as DEFAULT_P_KEY, GOOGLE_AI_KEY as DEFAULT_G_KEY } from './config.js';
+        // ✅ 將配置直接寫入，確保本地開啟也能運作
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
+            authDomain: "gen-lang-client-0733075059.firebaseapp.com",
+            projectId: "gen-lang-client-0733075059",
+            storageBucket: "gen-lang-client-0733075059.firebasestorage.app",
+            messagingSenderId: "561243064522",
+            appId: "1:561243064522:web:cdfffd357c9af417b08c33",
+            measurementId: "G-D93F1E1GR3"
+        };
+        const ADMIN_PASS = "0712";
+        // 預設 Key
+        const DEFAULT_G_KEY = "AIzaSyCGJpnYdbgUVr0UW_OUfUxOV12gUro-pv4";
+        const DEFAULT_P_KEY = ""; 
+
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app, DB_NAME);
+        // ✅ 修正：使用預設資料庫 (移除 "seawebfire")
+        const db = getFirestore(app);
 
-        // --- 核心邏輯：AI 選單狀態管理 ---
+        // --- AI 選單狀態管理 ---
         const modal = document.getElementById('aiConfigModal');
         const inputP = document.getElementById('inputPerplexityKey');
         const inputG = document.getElementById('inputGeminiKey');
         const selectMenu = document.getElementById('aiEngineSelect');
 
         function updateMenuStatus() {
-            // 讀取 Key (LocalStorage > config.js)
             const pKey = localStorage.getItem('user_perplexity_key') || DEFAULT_P_KEY;
             const gKey = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY;
             
             const pReady = pKey && !pKey.includes('...');
             const gReady = gKey && !gKey.includes('...');
 
-            // 更新選單文字
             selectMenu.options[0].text = pReady ? "✅ Perplexity (海納)" : "❌ Perplexity (未設定)";
             selectMenu.options[1].text = gReady ? "✅ Google Gemini (文筆)" : "❌ Google Gemini (未設定)";
 
-            // 恢復上次選擇
             const lastUsed = localStorage.getItem('last_used_engine');
             if (lastUsed) {
                 selectMenu.value = lastUsed;
             } else if (!pReady && gReady) {
-                selectMenu.value = 'gemini'; // 智慧切換
+                selectMenu.value = 'gemini'; 
             }
         }
 
         function openConfigModal() {
-            // 載入舊 Key 到輸入框
             inputP.value = localStorage.getItem('user_perplexity_key') || "";
             inputG.value = localStorage.getItem('user_gemini_key') || "";
             modal.classList.remove('hidden');
         }
 
-        // 綁定按鈕
         document.getElementById('aiConfigBtn').addEventListener('click', openConfigModal);
         selectMenu.addEventListener('change', () => localStorage.setItem('last_used_engine', selectMenu.value));
 
@@ -202,9 +210,7 @@
             updateMenuStatus();
         });
 
-        // 初始化檢查
         updateMenuStatus();
-
 
         // --- 登入與權限 ---
         document.getElementById('loginBtn').addEventListener('click', () => {
@@ -222,7 +228,6 @@
             signInAnonymously(auth).then(() => { loadPosts(); loadVIPs(); });
         }
 
-        // --- 分頁切換 ---
         const switchTab = (target) => { 
             const postV = document.getElementById('postView'); 
             const vipV = document.getElementById('vipView'); 
@@ -239,8 +244,6 @@
         document.getElementById('tabPostBtn').addEventListener('click', () => switchTab('post'));
         document.getElementById('tabVipBtn').addEventListener('click', () => switchTab('vip'));
 
-
-        // --- 資料庫操作功能 ---
         function loadPosts() { 
             const q = query(collection(db, "posts"), orderBy("timestamp", "desc")); 
             onSnapshot(q, (snapshot) => { 
@@ -281,20 +284,15 @@
         });
         window.delVip = async (id) => { if (confirm("確定移出此學員？")) await deleteDoc(doc(db, "vip_members", id)); };
 
-
-        // --- AI 雙引擎執行邏輯 ---
         document.getElementById('aiRewriteBtn').addEventListener('click', async () => {
             const content = document.getElementById('postContent').value;
             const category = document.querySelector('input[name="category"]:checked').value;
             const engine = selectMenu.value;
             
-            // 讀取 Key
             const pKey = localStorage.getItem('user_perplexity_key') || DEFAULT_P_KEY;
             const gKey = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY;
 
             if (!content) return alert("請先輸入一些草稿內容...");
-
-            // 檢查 Key
             if (engine === 'perplexity' && (!pKey || pKey.includes('...'))) {
                 openConfigModal();
                 return alert("⚠️ 請先設定 Perplexity Key");
@@ -309,13 +307,11 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${engine === 'perplexity' ? '海納思考中...' : 'Gemini 撰寫中...'}`;
 
-            // AI 指令
             const systemPrompt = `你現在是「小海財經」總編輯「海納 (Haina)」。請將內容填入【小海${category}觀察室】專屬框架。專業、條理分明。使用 Markdown 並將重點 **粗體標示**。包含：🎯核心戰略、一、數據解讀、二、技術分析、三、籌碼解析、四、產業焦點、五、策略建議、💡總結。\n\n原始內容：\n${content}`;
 
             try {
                 let resultText = "";
                 if (engine === 'perplexity') {
-                    // 呼叫 Perplexity
                     const res = await fetch('https://api.perplexity.ai/chat/completions', {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${pKey}`, 'Content-Type': 'application/json' },
@@ -329,7 +325,6 @@
                     if(data.error) throw new Error(data.error.message);
                     resultText = data.choices[0].message.content;
                 } else {
-                    // 呼叫 Google Gemini
                     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -340,7 +335,6 @@
                     resultText = data.candidates[0].content.parts[0].text;
                 }
                 
-                // 填入與預覽
                 document.getElementById('postContent').value = resultText.replace(/```markdown/g, '').replace(/```/g, '');
                 updatePreview();
 
@@ -353,7 +347,6 @@
             }
         });
 
-        // 預覽與發布
         window.updatePreview = () => { 
             document.getElementById('previewTitle').innerText = document.getElementById('postTitle').value || "文章標題..."; 
             document.getElementById('previewContent').innerHTML = document.getElementById('postContent').value ? marked.parse(document.getElementById('postContent').value) : ""; 
