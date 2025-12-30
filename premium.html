@@ -68,6 +68,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ✅ [關鍵修正] 使用你截圖中的正確設定
         const firebaseConfig = {
             apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
             authDomain: "gen-lang-client-0733075059.firebaseapp.com",
@@ -79,7 +80,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app, "seawebfire");
+        const db = getFirestore(app); // ✅ 修正：使用預設資料庫
         const auth = getAuth(app);
 
         const emailInput = document.getElementById('emailInput');
@@ -87,7 +88,6 @@
         const contentSection = document.getElementById('content-section');
         const errorContainer = document.getElementById('error-container');
 
-        // 檢查登入狀態
         const savedEmail = localStorage.getItem('littleSeaVIP');
         if(savedEmail) showContent();
 
@@ -95,7 +95,6 @@
             const email = emailInput.value.trim().toLowerCase();
             if(!email) return;
 
-            // 🔴 從資料庫驗證 Email
             const q = query(collection(db, "vip_members"), where("email", "==", email));
             const snapshot = await getDocs(q);
 
@@ -114,7 +113,6 @@
             loadVipPosts();
         }
 
-        // 🟢 抓取分類為「特訓區」的文章
         function loadVipPosts() {
             const q = query(collection(db, "posts"), where("category", "==", "特訓區"), orderBy("timestamp", "desc"));
             onSnapshot(q, (snapshot) => {

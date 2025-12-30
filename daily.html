@@ -47,6 +47,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ✅ [關鍵修正] 使用你截圖中的正確設定
         const firebaseConfig = {
             apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
             authDomain: "gen-lang-client-0733075059.firebaseapp.com",
@@ -59,7 +60,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        // ✅ 修正：不指定資料庫名稱，使用預設值以避免連線錯誤
+        // ✅ [關鍵修正] 使用預設資料庫
         const db = getFirestore(app); 
 
         const categoryColors = {
@@ -78,13 +79,10 @@
                 let hasContent = false;
                 snapshot.forEach((doc) => {
                     const post = doc.data();
-                    // 過濾掉 VIP 和心態文章
                     if (post.category !== '心態分享' && post.category !== '特訓區') {
                         hasContent = true;
                         const date = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit' }) : '剛剛';
                         const badgeClass = categoryColors[post.category] || 'bg-gray-100 text-gray-700';
-                        
-                        // 簡單的將換行符號轉為 HTML 換行
                         const contentHtml = post.content.replace(/\n/g, '<br>');
 
                         const html = `

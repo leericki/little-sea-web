@@ -306,4 +306,68 @@
             btn.disabled = true;
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${engine === 'perplexity' ? '海納思考中...' : 'Gemini 撰寫中...'}`;
 
-            const systemPrompt = `你現在是「小海
+            const systemPrompt = `你現在是「小海財經」總編輯「海納 (Haina)」。請將內容填入【小海${category}觀察室】專屬框架。專業、條理分明。使用 Markdown 並將重點 **粗體標示**。包含：🎯核心戰略、一、數據解讀、二、技術分析、三、籌碼解析、四、產業焦點、五、策略建議、💡總結。\n\n原始內容：\n${content}`;
+
+            try {
+                let resultText = "";
+                if (engine === 'perplexity') {
+                    const res = await fetch('https://api.perplexity.ai/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${pKey}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: 'sonar-pro',
+                            messages: [{ role: 'system', content: 'You are financial editor Haina.' }, { role: 'user', content: systemPrompt }],
+                            temperature: 0.2
+                        })
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error.message);
+                    resultText = data.choices[0].message.content;
+                } else {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error.message);
+                    resultText = data.candidates[0].content.parts[0].text;
+                }
+                
+                document.getElementById('postContent').value = resultText.replace(/```markdown/g, '').replace(/```/g, '');
+                updatePreview();
+
+            } catch (e) {
+                alert(`❌ 執行失敗：${e.message}`);
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
+
+        window.updatePreview = () => { 
+            document.getElementById('previewTitle').innerText = document.getElementById('postTitle').value || "文章標題..."; 
+            document.getElementById('previewContent').innerHTML = document.getElementById('postContent').value ? marked.parse(document.getElementById('postContent').value) : ""; 
+        };
+        document.getElementById('postTitle').addEventListener('input', updatePreview);
+        document.getElementById('postContent').addEventListener('input', updatePreview);
+        document.getElementById('aiTitleBtn').addEventListener('click', async () => { alert("請先完成文章內容，再使用 AI 生成標題功能"); });
+
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('submitBtn');
+            try {
+                btn.disabled = true; btn.innerText = "發布中...";
+                await addDoc(collection(db, "posts"), {
+                    title: document.getElementById('postTitle').value,
+                    content: document.getElementById('postContent').value,
+                    category: document.querySelector('input[name="category"]:checked').value,
+                    author: "小海",
+                    timestamp: serverTimestamp()
+                });
+                alert("✅ 文章已發布！"); location.reload();
+            } catch (e) { alert("發布失敗"); btn.disabled = false; }
+        });
+    </script>
+</body>
+</html>

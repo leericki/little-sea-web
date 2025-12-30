@@ -26,6 +26,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ✅ [關鍵修正] 使用你截圖中的正確設定
         const firebaseConfig = {
             apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
             authDomain: "gen-lang-client-0733075059.firebaseapp.com",
@@ -38,7 +39,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app, "seawebfire"); // ✅ 指定正確資料庫
+        const db = getFirestore(app); // ✅ 修正：使用預設資料庫
 
         signInAnonymously(auth).then(() => {
             const q = query(collection(db, "posts"), where("category", "==", "心態分享"), orderBy("timestamp", "desc"));
