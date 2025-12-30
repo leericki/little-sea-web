@@ -3,70 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小海控制台 | v30.4 海納完全體</title>
+    <title>小海控制台 | v30.0 特訓室管理版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
         .tab-active { border-bottom: 3px solid #0ea5e9; color: #0ea5e9; }
-        .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
-        .preview-box strong, .preview-box b { color: #0369a1; background-color: #f0f9ff; padding: 0 4px; border-radius: 4px; font-weight: 700; }
+        .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; }
+        .preview-box strong { color: #0369a1; background-color: #f0f9ff; padding: 0 4px; border-radius: 4px; font-weight: 700; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
     <div id="loginSection" class="min-h-screen flex items-center justify-center absolute inset-0 z-50 bg-gray-100">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border text-center">
-            <h2 class="text-2xl font-bold mb-8 text-gray-800">管理員登入</h2>
-            <input type="password" id="passwordInput" placeholder="請輸入密碼" class="w-full px-4 py-3 rounded-lg border text-center mb-4 text-lg">
-            <button id="loginBtn" class="w-full bg-sky-600 text-white font-bold py-3 rounded-lg">驗證身分</button>
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-800 text-center mb-8">管理員登入</h2>
+            <div class="space-y-4">
+                <input type="password" id="passwordInput" placeholder="請輸入密碼 (0712)" class="w-full px-4 py-3 rounded-lg border border-gray-300 text-center text-lg">
+                <button id="loginBtn" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg transition">驗證身分</button>
+            </div>
         </div>
     </div>
 
     <div id="dashboardSection" class="h-full hidden flex-col">
-        <nav class="bg-white border-b px-6 py-3 flex justify-between items-center z-40">
+        <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center z-40 shrink-0">
             <div class="flex items-center gap-4">
-                <h1 class="font-bold text-gray-800 text-lg">小海發文系統</h1>
-                <div class="flex gap-4 ml-6 text-sm">
-                    <button id="tabPostBtn" class="font-bold pb-1 tab-active">文章管理</button>
-                    <button id="tabVipBtn" class="font-bold pb-1 text-gray-400">學員管理</button>
+                <h1 class="font-bold text-gray-800 text-lg">小海發文系統 <span class="text-xs text-white bg-sky-600 px-2 py-1 rounded-full">v30.0</span></h1>
+                <div class="flex gap-4 ml-6">
+                    <button id="tabPostBtn" class="text-sm font-bold pb-1 tab-active">文章管理</button>
+                    <button id="tabVipBtn" class="text-sm font-bold pb-1 text-gray-400">學員管理 (VIP)</button>
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <a href="index.html" class="text-gray-600 bg-gray-50 border px-3 py-2 rounded-lg text-sm font-bold transition">🏠 回首頁</a>
-                <button id="aiConfigBtn" class="text-gray-600 hover:text-sky-600 bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium">🤖 AI 設定</button>
-                <button id="logoutBtn" class="text-red-500 font-bold px-3 py-2 rounded-lg">登出</button>
+                <a href="index.html" class="text-gray-600 hover:text-blue-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition">🏠 回首頁</a>
+                <button id="logoutBtn" class="text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg">登出</button>
             </div>
         </nav>
 
-        <div id="apiKeySection" class="hidden bg-sky-50 border-b p-4"><div class="max-w-4xl mx-auto flex gap-2"><input type="password" id="geminiApiKey" placeholder="pplx-..." class="flex-1 px-3 py-2 rounded border"><button id="saveKeyBtn" class="bg-sky-600 text-white px-4 py-2 rounded text-sm">儲存</button></div></div>
-
         <main id="postView" class="flex-1 flex overflow-hidden flex-col md:flex-row">
-            <div class="w-72 bg-slate-50 border-r flex flex-col hidden md:flex">
-                <div class="p-3 border-b font-bold text-gray-600 text-sm">文章列表 (<span id="postCount">0</span>)</div>
+            <div class="w-full md:w-72 bg-slate-50 border-r border-gray-200 flex flex-col hidden md:flex">
+                <div class="p-3 border-b border-gray-200 font-bold text-gray-600 text-sm">文章列表 (<span id="postCount">0</span>)</div>
                 <div id="postListContainer" class="flex-1 overflow-y-auto p-2 space-y-2"></div>
             </div>
-            <div class="flex-1 flex flex-col border-r bg-white overflow-y-auto p-6 space-y-5">
-                <div class="flex justify-between items-end"><label class="text-sm font-bold text-gray-700">文章標題</label><button id="aiTitleBtn" class="text-sky-600 text-xs font-bold bg-sky-50 px-2 py-1 rounded border">✨ AI 自動標題</button></div>
-                <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border shadow-sm outline-none focus:border-sky-500">
-                <label class="text-sm font-bold text-gray-700">文章分類</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <label class="cursor-pointer"><input type="radio" name="category" value="盤前分析" class="peer sr-only" checked><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-blue-600 peer-checked:text-white">盤前</div></label>
-                    <label class="cursor-pointer"><input type="radio" name="category" value="盤中分析" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-red-100 rounded-md peer-checked:bg-red-600 peer-checked:text-white font-bold text-red-600">🔥 盤中</div></label>
-                    <label class="cursor-pointer"><input type="radio" name="category" value="特訓區" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-emerald-100 rounded-md peer-checked:bg-emerald-600 peer-checked:text-white font-bold text-emerald-600">🟢 特訓</div></label>
-                    <label class="cursor-pointer"><input type="radio" name="category" value="盤後分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-indigo-600 peer-checked:text-white">盤後</div></label>
-                    <label class="cursor-pointer"><input type="radio" name="category" value="周末分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-purple-600 peer-checked:text-white">周末</div></label>
-                    <label class="cursor-pointer"><input type="radio" name="category" value="心態分享" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-amber-500 peer-checked:text-white">心態</div></label>
+            <div class="flex-1 flex flex-col border-r border-gray-200 bg-white overflow-y-auto">
+                <div class="p-6 space-y-5 max-w-3xl mx-auto w-full">
+                    <div>
+                        <div class="flex justify-between items-end mb-1">
+                            <label class="block text-sm font-bold text-gray-700">文章標題</label>
+                            <button id="aiTitleBtn" class="text-sky-600 hover:text-sky-800 text-xs font-bold">✨ AI 自動標題</button>
+                        </div>
+                        <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border border-gray-300">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">文章分類</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="cursor-pointer"><input type="radio" name="category" value="盤前分析" class="peer sr-only" checked><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-blue-600 peer-checked:text-white">盤前</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="盤中分析" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-red-100 rounded-md peer-checked:bg-red-600 peer-checked:text-white font-bold text-red-600">🔥 盤中</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="特訓區" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-emerald-100 rounded-md peer-checked:bg-emerald-600 peer-checked:text-white font-bold text-emerald-600">🟢 一對一特訓</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="盤後分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-indigo-600 peer-checked:text-white">盤後</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="周末分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-purple-600 peer-checked:text-white">周末</div></label>
+                            <label class="cursor-pointer"><input type="radio" name="category" value="心態分享" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-amber-500 peer-checked:text-white">心態</div></label>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between items-end">
+                            <label class="block text-sm font-bold text-gray-700">內容編輯</label>
+                            <button id="aiRewriteBtn" class="bg-blue-600 text-white text-xs font-bold py-1 px-3 rounded-full">🤖 AI 排版</button>
+                        </div>
+                        <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border border-gray-300 font-mono text-sm" placeholder="請輸入內容..."></textarea>
+                    </div>
+                    <button id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition">確認發布文章</button>
                 </div>
-                <div class="flex justify-between items-end"><label class="text-sm font-bold text-gray-700">內容編輯</label><button id="aiRewriteBtn" class="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow-md">呼叫總編輯海納排版</button></div>
-                <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border font-mono text-sm leading-relaxed" oninput="updatePreview()"></textarea>
-                <button id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg">確認發布文章</button>
             </div>
-            <div class="hidden md:flex flex-1 flex-col bg-slate-50 overflow-y-auto"><div class="p-3 bg-white border-b font-bold text-gray-500 text-sm">即時預覽</div><div class="p-6"><div class="bg-white rounded-xl shadow-sm p-8 max-w-lg mx-auto min-h-[500px]"><h2 id="previewTitle" class="text-2xl font-bold mb-6 border-b-2 pb-4">文章標題...</h2><div id="previewContent" class="preview-box"></div></div></div></div>
+            <div class="hidden md:flex flex-1 flex-col bg-slate-50 overflow-y-auto">
+                <div class="p-3 bg-white border-b border-gray-200 font-bold text-gray-500 text-sm">即時預覽</div>
+                <div class="p-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-lg mx-auto min-h-[500px]">
+                        <h2 id="previewTitle" class="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-gray-100 pb-4">文章標題...</h2>
+                        <div id="previewContent" class="preview-box"></div>
+                    </div>
+                </div>
+            </div>
         </main>
 
-        <main id="vipView" class="flex-1 hidden p-8 overflow-y-auto"><div class="max-w-2xl mx-auto bg-white rounded-2xl p-8 border shadow-sm"><h3 class="text-lg font-bold mb-4">新增學員 Email</h3><div class="flex gap-4 mb-8"><input type="email" id="vipEmailInput" placeholder="test@gmail.com" class="flex-1 px-4 py-2 border rounded-lg"><button id="addVipBtn" class="bg-emerald-600 text-white px-6 rounded-lg font-bold">新增</button></div><h3 class="text-lg font-bold mb-4">學員名單 (<span id="vipCount">0</span>)</h3><div id="vipListTable" class="divide-y border rounded-xl overflow-hidden shadow-sm"></div></div></main>
+        <main id="vipView" class="flex-1 hidden p-8 overflow-y-auto">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-user-plus mr-2 text-emerald-500"></i> 新增特訓學員</h3>
+                    <div class="flex gap-4 mb-8">
+                        <input type="email" id="vipEmailInput" placeholder="輸入學員 Email (例如: test@gmail.com)" class="flex-1 px-4 py-3 rounded-lg border border-gray-300">
+                        <button id="addVipBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 rounded-lg transition">新增學員</button>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-users mr-2 text-blue-500"></i> 目前特訓名單 (<span id="vipCount">0</span>)</h3>
+                    <div class="overflow-hidden border border-gray-100 rounded-xl">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50 border-b border-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-sm font-bold text-gray-500">學員信箱</th>
+                                    <th class="px-6 py-3 text-sm font-bold text-gray-500 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vipListTable" class="divide-y divide-gray-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script type="module">
@@ -74,43 +117,129 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ", authDomain: "gen-lang-client-0733075059.firebaseapp.com", projectId: "gen-lang-client-0733075059", storageBucket: "gen-lang-client-0733075059.firebasestorage.app", messagingSenderId: "561243064522", appId: "1:561243064522:web:cdfffd357c9af417b08c33", measurementId: "G-D93F1E1GR3" };
-        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app, "seawebfire");
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ",
+            authDomain: "gen-lang-client-0733075059.firebaseapp.com",
+            projectId: "gen-lang-client-0733075059",
+            storageBucket: "gen-lang-client-0733075059.firebasestorage.app",
+            messagingSenderId: "561243064522",
+            appId: "1:561243064522:web:cdfffd357c9af417b08c33",
+            measurementId: "G-D93F1E1GR3"
+        };
 
-        // --- 核心與導航控制 ---
-        document.getElementById('loginBtn').addEventListener('click', () => { if (document.getElementById('passwordInput').value === "0712") { localStorage.setItem('littlesea_admin', 'true'); location.reload(); } else { alert("❌ 密碼錯誤"); } });
-        document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem('littlesea_admin'); location.reload(); });
-        if (localStorage.getItem('littlesea_admin') === 'true') { document.getElementById('loginSection').classList.add('hidden'); document.getElementById('dashboardSection').classList.remove('hidden'); document.getElementById('dashboardSection').classList.add('flex'); signInAnonymously(auth).then(() => { loadPosts(); loadVIPs(); }); }
-        
-        const switchTab = (target) => { const postV = document.getElementById('postView'); const vipV = document.getElementById('vipView'); const tP = document.getElementById('tabPostBtn'); const tV = document.getElementById('tabVipBtn'); if (target === 'post') { postV.classList.remove('hidden'); postV.classList.add('flex'); vipV.classList.add('hidden'); tP.className = 'font-bold pb-1 tab-active'; tV.className = 'font-bold pb-1 text-gray-400'; } else { postV.classList.add('hidden'); postV.classList.remove('flex'); vipV.classList.remove('hidden'); tV.className = 'font-bold pb-1 tab-active'; tP.className = 'font-bold pb-1 text-gray-400'; } };
-        document.getElementById('tabPostBtn').addEventListener('click', () => switchTab('post')); document.getElementById('tabVipBtn').addEventListener('click', () => switchTab('vip'));
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app, "seawebfire"); // ✅ 指向 seawebfire 資料庫
 
-        // --- 文章與 VIP 功能 ---
-        function loadPosts() { const q = query(collection(db, "posts"), orderBy("timestamp", "desc")); onSnapshot(q, (snapshot) => { const list = document.getElementById('postListContainer'); document.getElementById('postCount').innerText = snapshot.docs.length; list.innerHTML = ''; snapshot.forEach((docSnap) => { const post = docSnap.data(); const item = document.createElement('div'); item.className = 'bg-white p-3 rounded shadow-sm border mb-2 relative'; item.innerHTML = `<div class="font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</div><div class="text-xs text-gray-400 mt-1">${post.category}</div><button onclick="window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600 transition"><i class="fas fa-trash-alt"></i></button>`; list.appendChild(item); }); }); }
-        window.delPost = async (id) => { if (confirm("確定刪除？")) await deleteDoc(doc(db, "posts", id)); };
-        function loadVIPs() { onSnapshot(collection(db, "vip_members"), (snapshot) => { const list = document.getElementById('vipListTable'); document.getElementById('vipCount').innerText = snapshot.docs.length; list.innerHTML = ''; snapshot.forEach((docSnap) => { const vip = docSnap.data(); const div = document.createElement('div'); div.className = 'flex justify-between p-4 bg-white items-center hover:bg-slate-50 transition'; div.innerHTML = `<span>${vip.email}</span><button onclick="window.delVip('${docSnap.id}')" class="text-red-400 font-bold">移出</button>`; list.appendChild(div); }); }); }
-        document.getElementById('addVipBtn').addEventListener('click', async () => { const email = document.getElementById('vipEmailInput').value.trim().toLowerCase(); if (email) { await addDoc(collection(db, "vip_members"), { email, addedAt: serverTimestamp() }); document.getElementById('vipEmailInput').value = ''; alert("✅ 已新增學員"); } });
-        window.delVip = async (id) => { if (confirm("確定移出？")) await deleteDoc(doc(db, "vip_members", id)); };
-
-        // --- 🚀 AI 海納核心編排功能 (最強框架) ---
-        async function fetchPerplexity(prompt, apiKey) { const res = await fetch('https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'sonar-pro', messages: [{ role: 'system', content: 'You are financial editor Haina.' }, { role: 'user', content: prompt }], temperature: 0.2 }) }); const data = await res.json(); return data.choices[0].message.content; }
-        
-        document.getElementById('aiRewriteBtn').addEventListener('click', async () => {
-            const apiKey = localStorage.getItem('gemini_api_key'); const content = document.getElementById('postContent').value; const category = document.querySelector('input[name="category"]:checked').value;
-            if (!apiKey || !content) return alert("請貼上 Key 並輸入筆記內容");
-            const btn = document.getElementById('aiRewriteBtn'); btn.disabled = true; btn.innerText = "總編輯審稿中...";
-            // ✅ 使用您原本最喜歡的 Haina 指令
-            const prompt = `你現在是「小海財經」總編輯「海納 (Haina)」。請將內容填入【小海${category}觀察室】專屬框架。專業、條理分明。使用 Markdown 並將重點 **粗體標示**。包含：🎯核心戰略、一、數據解讀、二、技術分析、三、籌碼解析、四、產業焦點、五、策略建議、💡總結。\n\n原始內容：\n${content}`;
-            try { const result = await fetchPerplexity(prompt, apiKey); document.getElementById('postContent').value = result.replace(/```markdown/g, '').replace(/```/g, ''); updatePreview(); } catch (e) { alert("AI 失敗"); } finally { btn.disabled = false; btn.innerText = "呼叫總編輯海納排版"; }
+        // --- 登入控制 ---
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            if (document.getElementById('passwordInput').value === "0712") {
+                localStorage.setItem('littlesea_admin', 'true');
+                location.reload();
+            } else { alert("❌ 密碼錯誤"); }
         });
 
-        window.updatePreview = () => { document.getElementById('previewTitle').innerText = document.getElementById('postTitle').value || "文章標題..."; document.getElementById('previewContent').innerHTML = document.getElementById('postContent').value ? marked.parse(document.getElementById('postContent').value) : ""; };
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('littlesea_admin');
+            location.reload();
+        });
+
+        if (localStorage.getItem('littlesea_admin') === 'true') {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('flex');
+            signInAnonymously(auth).then(() => { loadPosts(); loadVIPs(); });
+        }
+
+        // --- 分頁切換 ---
+        const tabPostBtn = document.getElementById('tabPostBtn');
+        const tabVipBtn = document.getElementById('tabVipBtn');
+        const postView = document.getElementById('postView');
+        const vipView = document.getElementById('vipView');
+
+        tabPostBtn.addEventListener('click', () => {
+            postView.classList.remove('hidden'); postView.classList.add('flex');
+            vipView.classList.add('hidden');
+            tabPostBtn.classList.add('tab-active'); tabVipBtn.classList.remove('tab-active'); tabVipBtn.classList.add('text-gray-400');
+        });
+
+        tabVipBtn.addEventListener('click', () => {
+            postView.classList.add('hidden'); postView.classList.remove('flex');
+            vipView.classList.remove('hidden');
+            tabVipBtn.classList.add('tab-active'); tabPostBtn.classList.remove('tab-active'); tabPostBtn.classList.add('text-gray-400');
+        });
+
+        // --- 1. 文章管理邏輯 ---
+        function loadPosts() {
+            const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('postListContainer');
+                document.getElementById('postCount').innerText = snapshot.docs.length;
+                list.innerHTML = '';
+                snapshot.forEach((docSnap) => {
+                    const post = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = 'bg-white p-3 rounded shadow-sm border border-gray-100 mb-2 relative';
+                    item.innerHTML = `
+                        <div class="pr-6 font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</div>
+                        <div class="text-xs text-gray-400 mt-1">${post.category}</div>
+                        <button onclick="window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-400"><i class="fas fa-trash-alt"></i></button>`;
+                    list.appendChild(item);
+                });
+            });
+        }
+        window.delPost = async (id) => { if (confirm("確定刪除文章？")) await deleteDoc(doc(db, "posts", id)); };
+
+        // --- 2. VIP 管理邏輯 ---
+        function loadVIPs() {
+            onSnapshot(collection(db, "vip_members"), (snapshot) => {
+                const list = document.getElementById('vipListTable');
+                document.getElementById('vipCount').innerText = snapshot.docs.length;
+                list.innerHTML = '';
+                snapshot.forEach((docSnap) => {
+                    const vip = docSnap.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 text-sm text-gray-700 font-mono">${vip.email}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="window.delVip('${docSnap.id}')" class="text-red-400 hover:text-red-600 transition"><i class="fas fa-user-minus"></i> 移出</button>
+                        </td>`;
+                    list.appendChild(row);
+                });
+            });
+        }
+
+        document.getElementById('addVipBtn').addEventListener('click', async () => {
+            const email = document.getElementById('vipEmailInput').value.trim().toLowerCase();
+            if (!email) return alert("請輸入 Email");
+            try {
+                await addDoc(collection(db, "vip_members"), { email: email, addedAt: serverTimestamp() });
+                document.getElementById('vipEmailInput').value = '';
+                alert("✅ 學員新增成功");
+            } catch (e) { alert("失敗：" + e.message); }
+        });
+        window.delVip = async (id) => { if (confirm("確定移出特訓名單？")) await deleteDoc(doc(db, "vip_members", id)); };
+
+        // --- 3. 發布文章 ---
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.querySelector('input[name="category"]:checked').value;
+            if (!title || !content) return alert("內容不能為空");
+            try {
+                document.getElementById('submitBtn').disabled = true;
+                await addDoc(collection(db, "posts"), { title, content, category, author: "小海", timestamp: serverTimestamp() });
+                alert("✅ 發布成功"); location.reload();
+            } catch (e) { alert("發布失敗"); document.getElementById('submitBtn').disabled = false; }
+        });
+
+        // 預覽功能
+        const updatePreview = () => {
+            document.getElementById('previewTitle').innerText = document.getElementById('postTitle').value || "文章標題...";
+            document.getElementById('previewContent').innerHTML = document.getElementById('postContent').value ? marked.parse(document.getElementById('postContent').value) : "";
+        };
         document.getElementById('postTitle').addEventListener('input', updatePreview);
-        document.getElementById('aiTitleBtn').addEventListener('click', async () => { const apiKey = localStorage.getItem('gemini_api_key'); if(!apiKey) return; const title = await fetchPerplexity(`幫這段台股分析生成一個吸睛標題：${document.getElementById('postContent').value.substring(0,300)}`, apiKey); document.getElementById('postTitle').value = title.replace(/[#"]/g, '').trim(); updatePreview(); });
-        document.getElementById('submitBtn').addEventListener('click', async () => { const btn = document.getElementById('submitBtn'); try { btn.disabled = true; btn.innerText = "發布中..."; await addDoc(collection(db, "posts"), { title: document.getElementById('postTitle').value, content: document.getElementById('postContent').value, category: document.querySelector('input[name="category"]:checked').value, author: "小海", timestamp: serverTimestamp() }); alert("✅ 文章已發布！"); location.reload(); } catch (e) { alert("發布失敗"); btn.disabled = false; } });
-        document.getElementById('aiConfigBtn').addEventListener('click', () => document.getElementById('apiKeySection').classList.toggle('hidden'));
-        document.getElementById('saveKeyBtn').addEventListener('click', () => { localStorage.setItem('gemini_api_key', document.getElementById('geminiApiKey').value.trim()); location.reload(); });
-        if (localStorage.getItem('gemini_api_key')) document.getElementById('keyStatusDisplay').innerHTML = '● Perplexity OK';
+        document.getElementById('postContent').addEventListener('input', updatePreview);
     </script>
 </body>
 </html>
