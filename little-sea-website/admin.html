@@ -159,15 +159,31 @@
     </div>
 
     <script type="module">
-        // 1. 引入設定檔 (確保 config.js 與此檔案在同一目錄)
-        import { firebaseConfig, ADMIN_PASS, DEFAULT_G_KEY, PERPLEXITY_KEY } from './config.js';
+        // -------------------------------------------------------------------
+        // 1. 設定區域 (已整合 Config)
+        // -------------------------------------------------------------------
         
-        // 2. 引入 Firebase SDK (使用 CDN 網址，這對應你提供的 import { initializeApp } [cite: 1, 3])
+        const ADMIN_PASS = "888888"; // 設定你的管理員登入密碼
+        const DEFAULT_G_KEY = "";    // 預設 Gemini Key (選填)
+        const PERPLEXITY_KEY = "";   // 預設 Perplexity Key (選填)
+
+        // ▼▼▼ 【關鍵修正】我已將 Project ID 強制改為 seawebfire ▼▼▼
+        // 如果這個 API Key 真的不能用，請你去 seawebfire 專案設定複製新的 apiKey 貼過來
+        const firebaseConfig = {
+            apiKey: "AIzaSyBi7FXRLt9qiVNa-qipPo-OD-b_qseQHUQ", 
+            authDomain: "seawebfire.firebaseapp.com",        // 改為 seawebfire
+            projectId: "seawebfire",                         // 改為 seawebfire (對應你的資料庫)
+            storageBucket: "seawebfire.firebasestorage.app", // 改為 seawebfire
+            messagingSenderId: "561243064522",
+            appId: "1:561243064522:web:cdfffd357c9af417b08c33",
+            measurementId: "G-D93F1E1GR3"
+        };
+
+        // 2. 引入 Firebase SDK (CDN 版本)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         
-        // 變數宣告
         let app, db, auth;
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -176,24 +192,22 @@
 
         // --- Firebase 初始化 ---
         try {
-            // 使用 config.js 中的金鑰進行初始化 [cite: 2, 3]
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            console.log("✅ Firebase 連線成功");
+            console.log("✅ Firebase 連線成功 (Project ID: " + firebaseConfig.projectId + ")");
         } catch (error) {
             console.error("❌ Firebase 初始化失敗:", error);
-            alert("系統錯誤：資料庫連線失敗，請檢查 config.js 或網路連線。");
+            alert("系統錯誤：資料庫連線失敗，請檢查 Config 設定。");
         }
 
-        // --- 登入邏輯 (修復版：不使用 reload) ---
+        // --- 登入邏輯 ---
         function handleLogin() {
             const inputVal = passwordInput.value;
-            // 增加 trim() 避免空白鍵導致錯誤
             if (inputVal.trim() === ADMIN_PASS) {
                 console.log("🔐 密碼正確");
-                localStorage.setItem('littlesea_admin', 'true'); // 記住登入狀態
-                initDashboard(); // 切換畫面，不刷新
+                localStorage.setItem('littlesea_admin', 'true');
+                initDashboard();
             } else {
                 alert("❌ 密碼錯誤");
                 passwordInput.value = '';
@@ -203,16 +217,13 @@
 
         // --- 進入儀表板 ---
         function initDashboard() {
-            // 切換 CSS 介面
             loginSection.classList.add('hidden');
             dashboardSection.classList.remove('hidden');
             dashboardSection.classList.add('flex');
 
-            // 確保 Firebase Auth 狀態 (匿名登入以取得讀寫權限)
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     console.log("👤 管理員 UID:", user.uid);
-                    // 登入後才開始載入資料
                     startDataListeners();
                     updateMenuStatus();
                 } else {
@@ -226,7 +237,7 @@
 
         // --- 資料監聽 (Realtime) ---
         function startDataListeners() {
-            // 1. 文章列表
+            // 監聽文章 (使用 posts 集合)
             const qPost = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             onSnapshot(qPost, (snapshot) => {
                 const list = document.getElementById('postListContainer');
@@ -240,26 +251,27 @@
                         <div class="font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</div>
                         <div class="text-xs text-gray-400 mt-1 flex justify-between items-center">
                             <span class="bg-gray-100 px-1.5 rounded">${post.category}</span>
-                            <span>${new Date(post.timestamp?.seconds * 1000).toLocaleDateString()}</span>
+                            <span>${post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleDateString() : '剛剛'}</span>
                         </div>
                         <button onclick="event.stopPropagation(); window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600 transition opacity-0 group-hover:opacity-100 p-1" title="刪除文章">
                             <i class="fas fa-trash-alt"></i>
                         </button>`;
                     
-                    // 點擊載入到編輯器
                     item.addEventListener('click', () => {
                         document.getElementById('postTitle').value = post.title || '';
                         document.getElementById('postContent').value = post.content || '';
-                        // 設定分類 Radio
                         const radios = document.querySelectorAll('input[name="category"]');
                         radios.forEach(r => { if(r.value === post.category) r.checked = true; });
                         window.updatePreview();
                     });
                     list.appendChild(item);
                 });
-            }, (error) => console.error("讀取文章錯誤:", error));
+            }, (error) => {
+                console.error("讀取文章錯誤:", error);
+                if(error.message.includes("permission-denied")) alert("讀取失敗：權限不足。請檢查 Firebase Rules 是否開啟 Test Mode。");
+            });
 
-            // 2. VIP 列表
+            // 監聽 VIP
             onSnapshot(collection(db, "vip_members"), (snapshot) => {
                 const list = document.getElementById('vipListTable');
                 if(document.getElementById('vipCount')) document.getElementById('vipCount').innerText = snapshot.docs.length;
@@ -278,19 +290,19 @@
                         </button>`;
                     list.appendChild(div);
                 });
-            }, (error) => console.error("讀取 VIP 錯誤:", error));
+            });
         }
 
-        // --- 全域功能綁定 (解決 Module Scope 問題) ---
+        // --- 全域功能 ---
         window.delPost = async (id) => {
-            if (confirm("⚠️ 確定刪除此文章？此動作無法復原。")) {
+            if (confirm("⚠️ 確定刪除此文章？")) {
                 try { await deleteDoc(doc(db, "posts", id)); } 
                 catch(e) { alert("刪除失敗: " + e.message); }
             }
         };
 
         window.delVip = async (id) => {
-            if (confirm("確定移除此 VIP 學員權限？")) {
+            if (confirm("確定移除此 VIP？")) {
                 try { await deleteDoc(doc(db, "vip_members", id)); }
                 catch(e) { alert("移除失敗: " + e.message); }
             }
@@ -303,21 +315,16 @@
             document.getElementById('previewContent').innerHTML = content ? marked.parse(content) : '<span class="text-gray-400 italic">預覽內容將顯示於此...</span>';
         };
 
-        // --- 基礎事件監聽 ---
-        
-        // 登入
         loginBtn.addEventListener('click', handleLogin);
         passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
-        // 登出
         document.getElementById('logoutBtn').addEventListener('click', () => {
             if(confirm("確定登出系統？")) {
                 localStorage.removeItem('littlesea_admin');
-                location.reload(); // 只有登出才刷新
+                location.reload();
             }
         });
 
-        // Tab 切換
         document.getElementById('tabPostBtn').addEventListener('click', () => switchTab('post'));
         document.getElementById('tabVipBtn').addEventListener('click', () => switchTab('vip'));
 
@@ -338,7 +345,6 @@
             }
         }
 
-        // 新增 VIP
         document.getElementById('addVipBtn').addEventListener('click', async () => {
             const input = document.getElementById('vipEmailInput');
             const email = input.value.trim().toLowerCase();
@@ -376,41 +382,38 @@
                 window.updatePreview();
             } catch (e) {
                 console.error("發布失敗:", e);
-                alert("發布失敗: " + e.message);
+                if(e.message.includes("not-found")) {
+                    alert("發布失敗：找不到資料庫。\n請去 Firebase 後台複製 seawebfire 的正確 API Key 貼到程式碼中。");
+                } else if(e.message.includes("permission-denied")) {
+                    alert("發布失敗：權限不足。請去 Firebase Console 開啟 Test Mode。");
+                } else {
+                    alert("發布失敗: " + e.message);
+                }
             } finally {
                 btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> 確認發布文章';
             }
         });
 
-        // --- AI 功能設定 ---
+        // --- AI 功能 ---
         const aiModal = document.getElementById('aiConfigModal');
         const selectMenu = document.getElementById('aiEngineSelect');
         
         function updateMenuStatus() {
-            // 優先讀取 LocalStorage，若無則讀取 Config 預設值
-            const pKey = localStorage.getItem('user_perplexity_key') || PERPLEXITY_KEY;
-            const gKey = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY;
+            const pKey = localStorage.getItem('user_perplexity_key');
+            const gKey = localStorage.getItem('user_gemini_key');
             
-            const pReady = pKey && pKey.length > 10;
-            const gReady = gKey && gKey.length > 10;
-
             if(selectMenu.options.length > 0) {
-                selectMenu.options[0].text = pReady ? "✅ Perplexity (海納)" : "❌ Perplexity (未設定)";
-                selectMenu.options[1].text = gReady ? "✅ Google Gemini (文筆)" : "❌ Google Gemini (未設定)";
+                selectMenu.options[0].text = (pKey && pKey.length > 10) ? "✅ Perplexity (海納)" : "❌ Perplexity (未設定)";
+                selectMenu.options[1].text = (gKey && gKey.length > 10) ? "✅ Google Gemini (文筆)" : "❌ Google Gemini (未設定)";
             }
-            
-            // 自動選擇可用引擎
-            if (!pReady && gReady) selectMenu.value = 'gemini';
         }
 
-        // 開啟 AI 設定 Modal
         document.getElementById('aiConfigBtn').addEventListener('click', () => {
-            document.getElementById('inputPerplexityKey').value = localStorage.getItem('user_perplexity_key') || PERPLEXITY_KEY || "";
-            document.getElementById('inputGeminiKey').value = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY || "";
+            document.getElementById('inputPerplexityKey').value = localStorage.getItem('user_perplexity_key') || "";
+            document.getElementById('inputGeminiKey').value = localStorage.getItem('user_gemini_key') || "";
             aiModal.classList.remove('hidden');
         });
 
-        // 儲存金鑰
         document.getElementById('saveKeysBtn').addEventListener('click', () => {
             const pKey = document.getElementById('inputPerplexityKey').value.trim();
             const gKey = document.getElementById('inputGeminiKey').value.trim();
@@ -421,71 +424,81 @@
             updateMenuStatus();
         });
 
-        // AI 自動寫作
+        // AI 呼叫通用函式
+        async function callAI(prompt, systemMsg) {
+            const engine = selectMenu.value;
+            const pKey = localStorage.getItem('user_perplexity_key');
+            const gKey = localStorage.getItem('user_gemini_key');
+
+            if (engine === 'perplexity' && (!pKey || pKey.length < 10)) throw new Error("請先設定 Perplexity Key");
+            if (engine === 'gemini' && (!gKey || gKey.length < 10)) throw new Error("請先設定 Google Gemini Key");
+
+            if (engine === 'perplexity') {
+                const res = await fetch('https://api.perplexity.ai/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${pKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'sonar-pro',
+                        messages: [{ role: 'system', content: systemMsg }, { role: 'user', content: prompt }],
+                        temperature: 0.2
+                    })
+                });
+                const data = await res.json();
+                if(data.error) throw new Error(data.error.message);
+                return data.choices[0].message.content;
+            } else {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: systemMsg + "\n" + prompt }] }] })
+                });
+                const data = await res.json();
+                if(data.error) throw new Error(data.error.message);
+                return data.candidates[0].content.parts[0].text;
+            }
+        }
+
+        // AI 排版
         document.getElementById('aiRewriteBtn').addEventListener('click', async () => {
             const content = document.getElementById('postContent').value;
             const category = document.querySelector('input[name="category"]:checked')?.value || "一般";
-            const engine = selectMenu.value;
-            
-            // 取得當前使用的 Key (Local 優先 -> Config 備用)
-            const pKey = localStorage.getItem('user_perplexity_key') || PERPLEXITY_KEY;
-            const gKey = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY;
-
             if (!content) return alert("請先輸入一些草稿內容...");
-            if (engine === 'perplexity' && (!pKey || pKey.length < 10)) return alert("⚠️ 請先設定 Perplexity Key");
-            if (engine === 'gemini' && (!gKey || gKey.length < 10)) return alert("⚠️ 請先設定 Google Gemini Key");
 
             const btn = document.getElementById('aiRewriteBtn');
             const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${engine === 'perplexity' ? '思考中...' : '撰寫中...'}`;
-
-            const systemPrompt = `你現在是「小海財經」總編輯。請將內容重寫為【小海${category}觀察室】風格。
-            要求：專業、條理分明、使用 Markdown。
-            結構：🎯核心戰略、一、數據解讀、二、技術分析、三、籌碼解析、💡總結。
-            原始內容：\n${content}`;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
 
             try {
-                let resultText = "";
-                if (engine === 'perplexity') {
-                    const res = await fetch('https://api.perplexity.ai/chat/completions', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${pKey}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: 'sonar-pro',
-                            messages: [{ role: 'system', content: 'You are a financial editor.' }, { role: 'user', content: systemPrompt }],
-                            temperature: 0.2
-                        })
-                    });
-                    const data = await res.json();
-                    if(data.error) throw new Error(data.error.message);
-                    resultText = data.choices[0].message.content;
-                } else {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
-                    });
-                    const data = await res.json();
-                    if(data.error) throw new Error(data.error.message);
-                    resultText = data.candidates[0].content.parts[0].text;
-                }
-                
-                document.getElementById('postContent').value = resultText.replace(/```markdown/g, '').replace(/```/g, '');
+                const result = await callAI(content, `你現在是「小海財經」總編輯。請將內容重寫為【小海${category}觀察室】風格。要求：專業、條理分明、使用 Markdown。`);
+                document.getElementById('postContent').value = result.replace(/```markdown/g, '').replace(/```/g, '');
                 window.updatePreview();
+            } catch (e) { alert(`❌ AI 錯誤：${e.message}`); } 
+            finally { btn.disabled = false; btn.innerHTML = originalText; }
+        });
 
-            } catch (e) {
-                alert(`❌ AI 執行失敗：${e.message}`);
-                console.error(e);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+        // AI 自動標題
+        document.getElementById('aiTitleBtn').addEventListener('click', async () => {
+            const content = document.getElementById('postContent').value;
+            if (!content) return alert("💡 請先完成內文，AI 才能幫你摘要標題");
+
+            const btn = document.getElementById('aiTitleBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '✨ 生成中...';
+
+            try {
+                let result = await callAI(content, "請根據以下文章內容，生成一個吸引人、專業的財經文章標題。只要回傳標題本身，不要引號，不要多餘的字。");
+                result = result.replace(/"/g, '').replace(/標題：/g, '').trim();
+                document.getElementById('postTitle').value = result;
+                window.updatePreview();
+            } catch (e) { 
+                alert(`❌ 生成失敗：${e.message}`); 
+            } finally { 
+                btn.disabled = false; btn.innerHTML = originalText; 
             }
         });
 
-        document.getElementById('aiTitleBtn').addEventListener('click', () => alert("💡 請先完成內文，AI 會根據內文自動摘要標題"));
-
-        // --- 自動登入檢查 ---
         if (localStorage.getItem('littlesea_admin') === 'true') {
             initDashboard();
         }
