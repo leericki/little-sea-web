@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小海控制台 | 管理中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f3f4f6; }
+        .preview-box { font-family: 'Noto Sans TC', sans-serif; line-height: 1.8; color: #334155; font-size: 15px; }
+        .preview-box strong, .preview-box b { color: #0369a1; background-color: #f0f9ff; padding: 0 4px; border-radius: 4px; font-weight: 700; }
+        .preview-box h1, .preview-box h2, .preview-box h3 { margin-top: 1em; margin-bottom: 0.5em; font-weight: bold; color: #1e293b; }
+        .preview-box ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .preview-box p { margin-bottom: 1em; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .animate-fade-in-up { animation: fadeInUp 0.3s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <div id="loginSection" class="min-h-screen flex items-center justify-center absolute inset-0 z-50 bg-gray-100">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border text-center">
+            <h2 class="text-2xl font-bold mb-8 text-gray-800">管理員登入</h2>
+            <input type="password" id="passwordInput" placeholder="請輸入密碼" class="w-full px-4 py-3 rounded-lg border text-center mb-4 text-lg focus:ring-2 focus:ring-sky-500 outline-none">
+            <button id="loginBtn" class="w-full bg-sky-600 text-white font-bold py-3 rounded-lg hover:bg-sky-700 transition shadow-lg">驗證身分</button>
+            <p class="text-xs text-gray-400 mt-4">Authorized Personnel Only</p>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="h-full hidden flex-col">
+        <nav class="bg-white border-b px-6 py-3 flex justify-between items-center z-40 shadow-sm">
+            <div class="flex items-center gap-4">
+                <h1 class="font-bold text-gray-800 text-lg"><i class="fas fa-ship text-sky-600 mr-2"></i>小海發文系統</h1>
+                <div class="flex gap-4 ml-6 text-sm">
+                    <button id="tabPostBtn" class="font-bold pb-1 border-b-2 border-sky-500 text-sky-600">文章管理</button>
+                    <button id="tabVipBtn" class="font-bold pb-1 text-gray-400 hover:text-gray-600 transition">學員管理</button>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="text-gray-600 bg-gray-50 border px-3 py-2 rounded-lg text-sm font-bold transition hover:bg-gray-100">🏠 回首頁</a>
+                <button id="aiConfigBtn" class="text-sky-600 bg-sky-50 border border-sky-100 px-3 py-2 rounded-lg text-sm font-bold hover:bg-sky-100 transition">
+                    <i class="fas fa-robot mr-1"></i> AI 設定
+                </button>
+                <button id="logoutBtn" class="text-red-500 font-bold px-3 py-2 rounded-lg hover:bg-red-50 transition">登出</button>
+            </div>
+        </nav>
+
+        <main id="postView" class="flex-1 flex overflow-hidden flex-col md:flex-row">
+            <div class="w-72 bg-slate-50 border-r flex flex-col hidden md:flex">
+                <div class="p-3 border-b font-bold text-gray-600 text-sm flex justify-between items-center">
+                    <span>文章列表</span>
+                    <span id="postCount" class="bg-gray-200 px-2 rounded-full text-xs py-0.5">0</span>
+                </div>
+                <div id="postListContainer" class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div class="text-center text-gray-400 text-sm mt-4"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col border-r bg-white overflow-y-auto p-6 space-y-5 relative">
+                <div class="flex justify-between items-end">
+                    <label class="text-sm font-bold text-gray-700">文章標題</label>
+                    <button id="aiTitleBtn" class="text-sky-600 text-xs font-bold bg-sky-50 px-2 py-1 rounded border hover:bg-sky-100 transition">✨ AI 自動標題</button>
+                </div>
+                <input type="text" id="postTitle" class="w-full px-4 py-2 rounded-lg border shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" placeholder="輸入標題...">
+                
+                <label class="text-sm font-bold text-gray-700">文章分類</label>
+                <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+                    <label class="cursor-pointer"><input type="radio" name="category" value="盤前分析" class="peer sr-only" checked><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-blue-600 peer-checked:text-white transition hover:bg-gray-50">盤前</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="category" value="盤中分析" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-red-100 rounded-md peer-checked:bg-red-600 peer-checked:text-white font-bold text-red-600 transition hover:bg-red-50">🔥 盤中</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="category" value="特訓區" class="peer sr-only"><div class="text-center py-2 text-sm border-2 border-emerald-100 rounded-md peer-checked:bg-emerald-600 peer-checked:text-white font-bold text-emerald-600 transition hover:bg-emerald-50">🟢 特訓</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="category" value="盤後分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-indigo-600 peer-checked:text-white transition hover:bg-gray-50">盤後</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="category" value="周末分析" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-purple-600 peer-checked:text-white transition hover:bg-gray-50">周末</div></label>
+                    <label class="cursor-pointer"><input type="radio" name="category" value="心態分享" class="peer sr-only"><div class="text-center py-2 text-sm border rounded-md peer-checked:bg-amber-500 peer-checked:text-white transition hover:bg-gray-50">心態</div></label>
+                </div>
+
+                <div class="flex justify-between items-end mb-1">
+                    <label class="text-sm font-bold text-gray-700">內容編輯 (Markdown)</label>
+                    
+                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 p-1 rounded-lg">
+                        <select id="aiEngineSelect" class="text-xs font-bold text-gray-700 bg-transparent border-none outline-none cursor-pointer pr-1">
+                            <option value="perplexity">🌊 Perplexity (海納)</option>
+                            <option value="gemini">♊ Google Gemini (文筆)</option>
+                        </select>
+                        <button onclick="document.getElementById('aiConfigModal').classList.remove('hidden')" class="text-gray-400 hover:text-blue-600 transition p-1" title="設定 API Key">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button id="aiRewriteBtn" class="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold py-1.5 px-3 rounded-full shadow hover:shadow-md transition transform active:scale-95 ml-1">
+                            呼叫排版
+                        </button>
+                    </div>
+                </div>
+                <textarea id="postContent" rows="12" class="w-full px-4 py-3 rounded-lg border font-mono text-sm leading-relaxed focus:ring-2 focus:ring-sky-200 outline-none resize-none" placeholder="在此輸入草稿..." oninput="window.updatePreview()"></textarea>
+                
+                <button id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-[0.99] flex justify-center items-center gap-2">
+                    <i class="fas fa-paper-plane"></i> 確認發布文章
+                </button>
+            </div>
+
+            <div class="hidden md:flex flex-1 flex-col bg-slate-50 overflow-y-auto">
+                <div class="p-3 bg-white border-b font-bold text-gray-500 text-sm">即時預覽</div>
+                <div class="p-6">
+                    <div class="bg-white rounded-xl shadow-sm p-8 max-w-lg mx-auto min-h-[500px]">
+                        <h2 id="previewTitle" class="text-2xl font-bold mb-6 border-b-2 pb-4 text-slate-800">文章標題...</h2>
+                        <div id="previewContent" class="preview-box text-gray-400 italic">
+                            預覽內容將顯示於此...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="vipView" class="flex-1 hidden p-8 overflow-y-auto bg-gray-50">
+            <div class="max-w-2xl mx-auto bg-white rounded-2xl p-8 border shadow-sm">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-user-plus text-emerald-500"></i> 新增學員 Email</h3>
+                <div class="flex gap-4 mb-8">
+                    <input type="email" id="vipEmailInput" placeholder="user@gmail.com" class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-200 outline-none">
+                    <button id="addVipBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 rounded-lg font-bold transition shadow">新增</button>
+                </div>
+                <h3 class="text-lg font-bold mb-4 border-b pb-2 flex justify-between items-center">
+                    學員名單
+                    <span id="vipCount" class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">0</span>
+                </h3>
+                <div id="vipListTable" class="divide-y border rounded-xl overflow-hidden shadow-sm max-h-[500px] overflow-y-auto bg-white">
+                    <div class="p-4 text-center text-gray-400">載入中...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="aiConfigModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-200 animate-fade-in-up">
+            <div class="bg-gradient-to-r from-slate-800 to-slate-900 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fas fa-robot"></i> AI 引擎中控台</h3>
+                <button onclick="document.getElementById('aiConfigModal').classList.add('hidden')" class="text-slate-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-5">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 text-sm text-blue-700 mb-2">
+                    <i class="fas fa-info-circle mr-1"></i> 設定將儲存於您的瀏覽器中，安全方便。
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">🌊 Perplexity API Key</label>
+                    <input type="password" id="inputPerplexityKey" placeholder="pplx-..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">♊ Google Gemini API Key</label>
+                    <input type="password" id="inputGeminiKey" placeholder="AIzaSy..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t">
+                <button onclick="document.getElementById('aiConfigModal').classList.add('hidden')" class="px-4 py-2 text-gray-500 font-bold text-sm hover:text-gray-700">取消</button>
+                <button id="saveKeysBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-md transition"><i class="fas fa-save mr-1"></i> 儲存設定</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. 引入設定檔 (確保 config.js 與此檔案在同一目錄)
+        import { firebaseConfig, ADMIN_PASS, DEFAULT_G_KEY, PERPLEXITY_KEY } from './config.js';
+        
+        // 2. 引入 Firebase SDK (使用 CDN 網址，這對應你提供的 import { initializeApp } [cite: 1, 3])
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        // 變數宣告
+        let app, db, auth;
+        const loginSection = document.getElementById('loginSection');
+        const dashboardSection = document.getElementById('dashboardSection');
+        const loginBtn = document.getElementById('loginBtn');
+        const passwordInput = document.getElementById('passwordInput');
+
+        // --- Firebase 初始化 ---
+        try {
+            // 使用 config.js 中的金鑰進行初始化 [cite: 2, 3]
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log("✅ Firebase 連線成功");
+        } catch (error) {
+            console.error("❌ Firebase 初始化失敗:", error);
+            alert("系統錯誤：資料庫連線失敗，請檢查 config.js 或網路連線。");
+        }
+
+        // --- 登入邏輯 (修復版：不使用 reload) ---
+        function handleLogin() {
+            const inputVal = passwordInput.value;
+            // 增加 trim() 避免空白鍵導致錯誤
+            if (inputVal.trim() === ADMIN_PASS) {
+                console.log("🔐 密碼正確");
+                localStorage.setItem('littlesea_admin', 'true'); // 記住登入狀態
+                initDashboard(); // 切換畫面，不刷新
+            } else {
+                alert("❌ 密碼錯誤");
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        // --- 進入儀表板 ---
+        function initDashboard() {
+            // 切換 CSS 介面
+            loginSection.classList.add('hidden');
+            dashboardSection.classList.remove('hidden');
+            dashboardSection.classList.add('flex');
+
+            // 確保 Firebase Auth 狀態 (匿名登入以取得讀寫權限)
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    console.log("👤 管理員 UID:", user.uid);
+                    // 登入後才開始載入資料
+                    startDataListeners();
+                    updateMenuStatus();
+                } else {
+                    signInAnonymously(auth).catch((error) => {
+                        console.error("Auth Error:", error);
+                        alert("權限驗證失敗: " + error.message);
+                    });
+                }
+            });
+        }
+
+        // --- 資料監聽 (Realtime) ---
+        function startDataListeners() {
+            // 1. 文章列表
+            const qPost = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+            onSnapshot(qPost, (snapshot) => {
+                const list = document.getElementById('postListContainer');
+                if(document.getElementById('postCount')) document.getElementById('postCount').innerText = snapshot.docs.length;
+                list.innerHTML = '';
+                snapshot.forEach((docSnap) => {
+                    const post = docSnap.data();
+                    const item = document.createElement('div');
+                    item.className = 'bg-white p-3 rounded shadow-sm border mb-2 relative group hover:shadow-md transition cursor-pointer hover:border-sky-300';
+                    item.innerHTML = `
+                        <div class="font-bold text-gray-700 line-clamp-1">${post.title || '無標題'}</div>
+                        <div class="text-xs text-gray-400 mt-1 flex justify-between items-center">
+                            <span class="bg-gray-100 px-1.5 rounded">${post.category}</span>
+                            <span>${new Date(post.timestamp?.seconds * 1000).toLocaleDateString()}</span>
+                        </div>
+                        <button onclick="event.stopPropagation(); window.delPost('${docSnap.id}')" class="absolute top-3 right-3 text-red-300 hover:text-red-600 transition opacity-0 group-hover:opacity-100 p-1" title="刪除文章">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>`;
+                    
+                    // 點擊載入到編輯器
+                    item.addEventListener('click', () => {
+                        document.getElementById('postTitle').value = post.title || '';
+                        document.getElementById('postContent').value = post.content || '';
+                        // 設定分類 Radio
+                        const radios = document.querySelectorAll('input[name="category"]');
+                        radios.forEach(r => { if(r.value === post.category) r.checked = true; });
+                        window.updatePreview();
+                    });
+                    list.appendChild(item);
+                });
+            }, (error) => console.error("讀取文章錯誤:", error));
+
+            // 2. VIP 列表
+            onSnapshot(collection(db, "vip_members"), (snapshot) => {
+                const list = document.getElementById('vipListTable');
+                if(document.getElementById('vipCount')) document.getElementById('vipCount').innerText = snapshot.docs.length;
+                list.innerHTML = '';
+                snapshot.forEach((docSnap) => {
+                    const vip = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between p-4 bg-white items-center hover:bg-slate-50 transition border-b last:border-0';
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs"><i class="fas fa-user"></i></div>
+                            <span class="font-mono text-gray-700 text-sm">${vip.email}</span>
+                        </div>
+                        <button onclick="window.delVip('${docSnap.id}')" class="text-red-400 hover:text-red-600 font-bold text-xs border border-red-200 hover:border-red-400 px-2 py-1 rounded transition">
+                            移出
+                        </button>`;
+                    list.appendChild(div);
+                });
+            }, (error) => console.error("讀取 VIP 錯誤:", error));
+        }
+
+        // --- 全域功能綁定 (解決 Module Scope 問題) ---
+        window.delPost = async (id) => {
+            if (confirm("⚠️ 確定刪除此文章？此動作無法復原。")) {
+                try { await deleteDoc(doc(db, "posts", id)); } 
+                catch(e) { alert("刪除失敗: " + e.message); }
+            }
+        };
+
+        window.delVip = async (id) => {
+            if (confirm("確定移除此 VIP 學員權限？")) {
+                try { await deleteDoc(doc(db, "vip_members", id)); }
+                catch(e) { alert("移除失敗: " + e.message); }
+            }
+        };
+
+        window.updatePreview = () => {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            document.getElementById('previewTitle').innerText = title || "文章標題...";
+            document.getElementById('previewContent').innerHTML = content ? marked.parse(content) : '<span class="text-gray-400 italic">預覽內容將顯示於此...</span>';
+        };
+
+        // --- 基礎事件監聽 ---
+        
+        // 登入
+        loginBtn.addEventListener('click', handleLogin);
+        passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+        // 登出
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if(confirm("確定登出系統？")) {
+                localStorage.removeItem('littlesea_admin');
+                location.reload(); // 只有登出才刷新
+            }
+        });
+
+        // Tab 切換
+        document.getElementById('tabPostBtn').addEventListener('click', () => switchTab('post'));
+        document.getElementById('tabVipBtn').addEventListener('click', () => switchTab('vip'));
+
+        function switchTab(target) {
+            const postV = document.getElementById('postView');
+            const vipV = document.getElementById('vipView');
+            const tP = document.getElementById('tabPostBtn');
+            const tV = document.getElementById('tabVipBtn');
+            
+            if (target === 'post') {
+                postV.classList.remove('hidden'); postV.classList.add('flex'); vipV.classList.add('hidden');
+                tP.className = 'font-bold pb-1 border-b-2 border-sky-500 text-sky-600 transition';
+                tV.className = 'font-bold pb-1 text-gray-400 hover:text-gray-600 transition';
+            } else {
+                postV.classList.add('hidden'); postV.classList.remove('flex'); vipV.classList.remove('hidden');
+                tV.className = 'font-bold pb-1 border-b-2 border-sky-500 text-sky-600 transition';
+                tP.className = 'font-bold pb-1 text-gray-400 hover:text-gray-600 transition';
+            }
+        }
+
+        // 新增 VIP
+        document.getElementById('addVipBtn').addEventListener('click', async () => {
+            const input = document.getElementById('vipEmailInput');
+            const email = input.value.trim().toLowerCase();
+            if(!email) return alert("請輸入 Email");
+            try {
+                const btn = document.getElementById('addVipBtn');
+                btn.disabled = true; btn.innerText = "...";
+                await addDoc(collection(db, "vip_members"), { email, addedAt: serverTimestamp() });
+                input.value = '';
+                alert("✅ 已新增 VIP");
+            } catch(e) { alert("新增失敗: " + e.message); }
+            finally { document.getElementById('addVipBtn').disabled = false; document.getElementById('addVipBtn').innerText = "新增"; }
+        });
+
+        // 發布文章
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.querySelector('input[name="category"]:checked')?.value || "一般";
+
+            if (!title || !content) return alert("❌ 標題與內容不能為空");
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 發布中...';
+
+            try {
+                await addDoc(collection(db, "posts"), {
+                    title, content, category,
+                    author: "小海",
+                    timestamp: serverTimestamp()
+                });
+                alert("✅ 文章發布成功！");
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postContent').value = '';
+                window.updatePreview();
+            } catch (e) {
+                console.error("發布失敗:", e);
+                alert("發布失敗: " + e.message);
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> 確認發布文章';
+            }
+        });
+
+        // --- AI 功能設定 ---
+        const aiModal = document.getElementById('aiConfigModal');
+        const selectMenu = document.getElementById('aiEngineSelect');
+        
+        function updateMenuStatus() {
+            // 優先讀取 LocalStorage，若無則讀取 Config 預設值
+            const pKey = localStorage.getItem('user_perplexity_key') || PERPLEXITY_KEY;
+            const gKey = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY;
+            
+            const pReady = pKey && pKey.length > 10;
+            const gReady = gKey && gKey.length > 10;
+
+            if(selectMenu.options.length > 0) {
+                selectMenu.options[0].text = pReady ? "✅ Perplexity (海納)" : "❌ Perplexity (未設定)";
+                selectMenu.options[1].text = gReady ? "✅ Google Gemini (文筆)" : "❌ Google Gemini (未設定)";
+            }
+            
+            // 自動選擇可用引擎
+            if (!pReady && gReady) selectMenu.value = 'gemini';
+        }
+
+        // 開啟 AI 設定 Modal
+        document.getElementById('aiConfigBtn').addEventListener('click', () => {
+            document.getElementById('inputPerplexityKey').value = localStorage.getItem('user_perplexity_key') || PERPLEXITY_KEY || "";
+            document.getElementById('inputGeminiKey').value = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY || "";
+            aiModal.classList.remove('hidden');
+        });
+
+        // 儲存金鑰
+        document.getElementById('saveKeysBtn').addEventListener('click', () => {
+            const pKey = document.getElementById('inputPerplexityKey').value.trim();
+            const gKey = document.getElementById('inputGeminiKey').value.trim();
+            if(pKey) localStorage.setItem('user_perplexity_key', pKey);
+            if(gKey) localStorage.setItem('user_gemini_key', gKey);
+            alert("✅ 金鑰設定已儲存");
+            aiModal.classList.add('hidden');
+            updateMenuStatus();
+        });
+
+        // AI 自動寫作
+        document.getElementById('aiRewriteBtn').addEventListener('click', async () => {
+            const content = document.getElementById('postContent').value;
+            const category = document.querySelector('input[name="category"]:checked')?.value || "一般";
+            const engine = selectMenu.value;
+            
+            // 取得當前使用的 Key (Local 優先 -> Config 備用)
+            const pKey = localStorage.getItem('user_perplexity_key') || PERPLEXITY_KEY;
+            const gKey = localStorage.getItem('user_gemini_key') || DEFAULT_G_KEY;
+
+            if (!content) return alert("請先輸入一些草稿內容...");
+            if (engine === 'perplexity' && (!pKey || pKey.length < 10)) return alert("⚠️ 請先設定 Perplexity Key");
+            if (engine === 'gemini' && (!gKey || gKey.length < 10)) return alert("⚠️ 請先設定 Google Gemini Key");
+
+            const btn = document.getElementById('aiRewriteBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${engine === 'perplexity' ? '思考中...' : '撰寫中...'}`;
+
+            const systemPrompt = `你現在是「小海財經」總編輯。請將內容重寫為【小海${category}觀察室】風格。
+            要求：專業、條理分明、使用 Markdown。
+            結構：🎯核心戰略、一、數據解讀、二、技術分析、三、籌碼解析、💡總結。
+            原始內容：\n${content}`;
+
+            try {
+                let resultText = "";
+                if (engine === 'perplexity') {
+                    const res = await fetch('https://api.perplexity.ai/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${pKey}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: 'sonar-pro',
+                            messages: [{ role: 'system', content: 'You are a financial editor.' }, { role: 'user', content: systemPrompt }],
+                            temperature: 0.2
+                        })
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error.message);
+                    resultText = data.choices[0].message.content;
+                } else {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error.message);
+                    resultText = data.candidates[0].content.parts[0].text;
+                }
+                
+                document.getElementById('postContent').value = resultText.replace(/```markdown/g, '').replace(/```/g, '');
+                window.updatePreview();
+
+            } catch (e) {
+                alert(`❌ AI 執行失敗：${e.message}`);
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        document.getElementById('aiTitleBtn').addEventListener('click', () => alert("💡 請先完成內文，AI 會根據內文自動摘要標題"));
+
+        // --- 自動登入檢查 ---
+        if (localStorage.getItem('littlesea_admin') === 'true') {
+            initDashboard();
+        }
+
+    </script>
+</body>
+</html>
